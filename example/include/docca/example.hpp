@@ -110,6 +110,15 @@ static std::size_t s_var = 0;
 type
 func(int arg1, std::string arg2);
 
+/** Brief for function starting with _
+
+    @return @ref type
+
+    @see func
+*/
+type
+_func(float arg1, std::size arg2);
+
 /** Brief.
 
     Function description.
@@ -266,6 +275,15 @@ static std::size_t s_var = 0;
 type
 func(int arg1, std::string arg2);
 
+/** Brief for function starting with _
+
+@return @ref type
+
+@see func
+*/
+type
+_func(float arg1, std::size arg2);
+
 /** Brief.
 
     Function description.
@@ -318,6 +336,48 @@ overload(int arg1, int arg2, int arg3);
 
 } // nested
 
+/// Overloads operators
+struct Num
+{
+
+    /// Addition
+    friend
+    Num
+    operator +(Num, Num);
+
+    /// Subtraction
+    friend
+    Num
+    operator -(Num, Num);
+
+    /// Multiplication
+    friend
+    Num
+    operator *(Num, Num);
+
+    /// Division
+    friend
+    Num
+    operator /(Num, Num);
+
+};
+
+/// @ref Num addition
+Num
+operator +(Num, Num);
+
+/// @ref Num subtraction
+Num
+operator -(Num, Num);
+
+/// @ref Num multiplication
+Num
+operator *(Num, Num);
+
+/// @ref Num division
+Num
+operator /(Num, Num);
+
 /** Template class type.
 
     Description.
@@ -342,7 +402,10 @@ public:
         one,
 
         /// 2
-        two
+        two,
+
+        /// _3
+        _three
     };
 
     /** Enum class
@@ -358,7 +421,10 @@ public:
         bbb,
 
         /// ccc
-        ccc
+        ccc,
+
+        /// _ddd
+        _ddd
     };
 
     /** Type alias
@@ -385,6 +451,18 @@ public:
         Description
     */
     static std::size_t s_var = 0;
+
+    /** Default Ctor
+
+        Description
+    */
+    class_type();
+
+    /** Dtor
+
+        Description
+    */
+    ~class_type();
 
     /** Brief with @b bold text.
 
@@ -459,6 +537,66 @@ public:
     void
     overload(int arg1, int arg2, int arg3);
 
+    /** Less-than operator
+
+        Description
+    */
+    bool
+    operator< (class_type const& rhs) const;
+
+    /** Greater-than operator
+
+        Description
+    */
+    bool
+    operator> (class_type const& rhs) const;
+
+    /** Less-than-or-equal-to operator
+
+        Description
+    */
+    bool
+    operator<= (class_type const& rhs) const;
+
+    /** Greater-than-or-equal-to operator
+
+        Description
+    */
+    bool
+    operator>= (class_type const& rhs) const;
+
+    /** Equality operator
+
+        Description
+    */
+    bool
+    operator== (class_type const& rhs) const;
+
+    /** Inequality operator
+
+        Description
+    */
+    bool
+    operator!= (class_type const& rhs) const;
+
+    /** Arrow operator
+
+        Description
+    */
+    std::size_t operator->() const;
+
+    /** Index operator
+
+        Description
+    */
+    enum_c& operator[](std::size_t);
+
+    /** Index operator
+
+        Description
+    */
+    enum_c operator[](std::size_t) const;
+
     /// Public data
     std::size_t pub_data_;
 
@@ -471,6 +609,12 @@ protected:
         Description
     */
     std::size_t prot_data_;
+
+    /** Protected enum
+
+        Description
+    */
+    enum_c _prot_enum;
 
     /** Static protected data
 
@@ -616,9 +760,9 @@ class derived_type :
 
     @li @ref class_type
 
-    @li @ref class_type::enum_t : @ref class_type::zero @ref class_type::one @ref class_type::two
+    @li @ref class_type::enum_t : @ref class_type::zero @ref class_type::one @ref class_type::two @ref class_type::_three
 
-    @li @ref class_type::enum_c : class_type::enum_c::aaa @ref class_type::enum_c::bbb @ref class_type::enum_c::ccc
+    @li @ref class_type::enum_c : class_type::enum_c::aaa @ref class_type::enum_c::bbb @ref class_type::enum_c::ccc class_type::enum_c::_ddd
 
     @li @ref class_type::type
 
@@ -627,6 +771,8 @@ class derived_type :
     @li @ref class_type::var
 
     @li @ref class_type::s_var
+
+    @li @ref class_type::class_type
 
     @li @ref class_type::func
 
@@ -638,11 +784,16 @@ class derived_type :
 
     @li @ref class_type::pub_sdata_
 
+    @li @ref class_type::_prot_enum
+
     @li @ref class_type::prot_type
 
     @li @ref class_type::priv_type
 
     @li @ref derived_type
+
+    @li @ref Num
+
 */
 void all_ref();
 

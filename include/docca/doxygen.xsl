@@ -227,6 +227,12 @@
          select="concat(substring-before($name, '&gt;'), '_gt_', substring-after($name, '&gt;'))"/>
       </xsl:call-template>
     </xsl:when>
+    <xsl:when test="starts-with($name, '~')">
+      <xsl:call-template name="make-id">
+        <xsl:with-param name="name"
+         select="concat(substring-after($name, '~'), '_dtor_')"/>
+      </xsl:call-template>
+    </xsl:when>
     <xsl:when test="contains($name, '[')">
       <xsl:call-template name="make-id">
         <xsl:with-param name="name"
@@ -267,6 +273,12 @@
       <xsl:call-template name="make-id">
         <xsl:with-param name="name"
          select="concat(substring-before($name, '*'), '_star_', substring-after($name, '*'))"/>
+      </xsl:call-template>
+    </xsl:when>
+    <xsl:when test="contains($name, '/')">
+      <xsl:call-template name="make-id">
+        <xsl:with-param name="name"
+         select="concat(substring-before($name, '/'), '_slash_', substring-after($name, '/'))"/>
       </xsl:call-template>
     </xsl:when>
     <xsl:when test="contains($name, '~')">
