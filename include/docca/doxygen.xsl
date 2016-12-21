@@ -56,6 +56,22 @@
 
 <!--========== Utilities ==========-->
 
+<!-- 4 spaces used for indentation -->
+<xsl:variable name="tabspaces">
+<xsl:text>    </xsl:text>
+</xsl:variable>
+
+<!-- Indent the current line with count number of tabspaces -->
+<xsl:template name="indent">
+  <xsl:param name="count"/>
+  <xsl:if test="$count &gt; 0">
+    <xsl:value-of select="$tabspaces"/>
+    <xsl:call-template name="indent">
+      <xsl:with-param name="count" select="$count - 1"/>
+    </xsl:call-template>
+  </xsl:if>
+</xsl:template>
+
 <!-- Remove the top-most namespace from identifier -->
 <xsl:template name="strip-one-ns">
   <xsl:param name="name"/>
@@ -396,13 +412,35 @@
   <xsl:text>`</xsl:text>
 </xsl:template>
 
+
+<!-- Ensure the list has new lines separating it -->
+<xsl:template match="orderedlist | itemizedlist" mode="markup">
+  <xsl:value-of select="$newline" />
+  <xsl:apply-templates mode="markup"/>
+  <xsl:value-of select="$newline" />
+</xsl:template>
+
+<!-- Properly format a list item to ensure proper nesting and styling -->
 <xsl:template match="listitem" mode="markup">
-  <xsl:text>* </xsl:text>
-  <xsl:call-template name="strip-leading-whitespace">
-    <xsl:with-param name="text">
-      <xsl:apply-templates mode="markup"/>
-    </xsl:with-param>
+  <!-- The first listitem in a group was put on a newline by the 
+       rule above, so only indent the later siblings -->
+  <xsl:if test="position() &gt; 1">
+    <xsl:value-of select="$newline" />
+  </xsl:if>
+  <!-- Indent the listitem based on the list nesting level -->
+  <xsl:call-template name="indent">
+     <xsl:with-param name="count" select="count(ancestor::orderedlist | ancestor::itemizedlist )-1" />
   </xsl:call-template>
+  <xsl:if test="parent::orderedlist">
+    <xsl:text># </xsl:text>
+  </xsl:if>
+  <xsl:if test="parent::itemizedlist">
+    <xsl:text>* </xsl:text>
+  </xsl:if>
+  <!-- Doxygen injects a <para></para> element around the listitem contents
+       so this rule extracts the contents and formats that directly to avoid
+       introducing extra newlines from formating para -->
+  <xsl:apply-templates select="para/node()" mode="markup"/>
 </xsl:template>
 
 <xsl:template match="bold" mode="markup">[*<xsl:apply-templates mode="markup"/>]</xsl:template>
@@ -706,7 +744,6 @@
 </xsl:template>
 
 
-
 <xsl:template match="ref[@kindref='compound']" mode="markup">
   <xsl:variable name="name">
     <xsl:value-of select="."/>
@@ -749,8 +786,50 @@
   </xsl:if>
 </xsl:template>
 
+<!-- fooooooooooooooooooooo -->
+<xsl:template match="ref[@kindref='compound']" mode="markup-nested">
+  <xsl:variable name="name">
+    <xsl:value-of select="."/>
+  </xsl:variable>
+  <xsl:variable name="dox-ref-id" select="@refid"/>
+  <xsl:variable name="kind" select="(/doxygen//compounddef[@id=$dox-ref-id])[1]/@kind"/>
+  <xsl:variable name="ref-name" select="(/doxygen//compounddef[@id=$dox-ref-id])[1]/compoundname"/>
+  <xsl:variable name="ref-id">
+    <xsl:call-template name="make-id">
+      <xsl:with-param name="name" select="$ref-name"/>
+    </xsl:call-template>
+  </xsl:variable>
+  <xsl:variable name="display-name">
+    <xsl:call-template name="strip-doc-ns">
+      <xsl:with-param name="name" select="$ref-name"/>
+    </xsl:call-template>
+  </xsl:variable>
+  <xsl:choose>
+    <xsl:when test="$kind != 'namespace'">
+      <xsl:if test="$debug &gt; 0">|2|</xsl:if>
+      <xsl:text>[link </xsl:text>
+      <xsl:value-of select="concat($doc-ref, $ref-id)"/>
+      <xsl:text> `</xsl:text>
+      <xsl:value-of select="$display-name"/>
+      <xsl:text>`]</xsl:text>
+    </xsl:when>
+    <xsl:otherwise>
+      <xsl:text>[role red |2|</xsl:text>
+      <xsl:value-of select="$display-name"/>
+      <xsl:text>]</xsl:text>
+    </xsl:otherwise>
+  </xsl:choose>
+  <xsl:if test="$debug &gt; 1">
+    <xsl:text>[heading Debug]&#xd;[table [[name][value]]</xsl:text>
+    <xsl:value-of select="concat('[[dox-ref-id][', $dox-ref-id, ']]&#xd;')"/>
+    <xsl:value-of select="concat('[[kind][', $kind, ']]&#xd;')"/>
+    <xsl:value-of select="concat('[[ref-name][', $ref-name, ']]&#xd;')"/>
+    <xsl:value-of select="concat('[[ref-id][', $ref-id, ']]&#xd;')"/>
+    <xsl:value-of select="concat('[[display-name][', $display-name, ']]]&#xd;')"/>
+  </xsl:if>
+</xsl:template>
 
-
+<!--
 <xsl:template match="ref[@kindref='compound']" mode="markup-nested">
   <xsl:variable name="name">
     <xsl:value-of select="."/>
@@ -759,6 +838,7 @@
   <xsl:value-of select="."/>
   <xsl:text>]</xsl:text>
 </xsl:template>
+-->
 
 <xsl:template match="ref[@kindref='member']" mode="markup-nested">
   <xsl:variable name="name">

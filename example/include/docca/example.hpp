@@ -799,6 +799,38 @@ void all_ref();
 
 } // example
 
+/** Test list support.
+
+    Lists are fun.  An example:
+    
+    1. Lists with extra long lines that can *span* multiple lines
+    and overflow even the longest of buffers.
+    2. With Numbers
+        + Or not
+            + Nesting
+                1. Deeply
+        + And returning `here`.
+
+    Another list I enjoy:
+
+    -# 1
+        - 1.a
+            -# 1.a.1
+            -# 1.a.2
+        - 1.b
+    -# 2
+        - 2.a
+        - 2.b
+            -# 2.b.1
+            -# 2.b.2
+                - 2.b.2.a
+                - 2.b.2.b 
+    
+ */
+struct list_test
+{
+
+};
 namespace other {
 
 /// other function
