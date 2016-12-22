@@ -441,6 +441,24 @@
   <xsl:text>&#xd;  ]]&#xd;</xsl:text>
 </xsl:template>
 
+<!-- Table support -->
+<xsl:template match="table" mode="markup">
+   <xsl:text>&#xd;[table  &#xd;</xsl:text>
+   <xsl:apply-templates mode="markup"/>
+   <xsl:text>]&#xd;</xsl:text>
+</xsl:template>
+
+<xsl:template match="row" mode="markup">
+   <xsl:text>    [</xsl:text>
+   <xsl:apply-templates mode="markup"/>
+   <xsl:text>]&#xd;</xsl:text>
+</xsl:template>
+
+<xsl:template match="entry" mode="markup">
+   <xsl:text>[</xsl:text>
+   <xsl:apply-templates select="para/node()" mode="markup"/>
+   <xsl:text>]</xsl:text>
+</xsl:template>
 
 
 <xsl:template match="simplesect" mode="markup">

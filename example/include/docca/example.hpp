@@ -799,6 +799,7 @@ void all_ref();
 
 } // example
 
+
 namespace other {
 
 /// other function
@@ -808,6 +809,16 @@ void func();
 struct class_type
 {
 };
+
+/** Testing (markdown) table support
+
+    First Header  | Second Header
+    ------------- | -------------
+    Content Cell  | Content Cell 
+    Content Cell  | Content Cell 
+*/
+void table_test();
+
 
 } // other
 
