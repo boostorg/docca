@@ -1733,6 +1733,9 @@
     <xsl:when test="starts-with(type, 'class ')">
       <xsl:text>class </xsl:text>
     </xsl:when>
+    <xsl:when test="starts-with(type, 'typename ')">
+      <xsl:text>typename </xsl:text>
+    </xsl:when>
     <xsl:otherwise>
       <xsl:text>[role red error.class-detail-template.1]</xsl:text>
     </xsl:otherwise>
@@ -1745,6 +1748,9 @@
       </xsl:when>
       <xsl:when test="starts-with(type, 'class ')">
         <xsl:value-of select="substring(type, 7)"/>
+      </xsl:when>
+      <xsl:when test="starts-with(type, 'typename ')">
+        <xsl:value-of select="substring(type, 10)"/>
       </xsl:when>
       <xsl:otherwise>
         <xsl:text>[role red error.class-detail-template.2]</xsl:text>
