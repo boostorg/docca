@@ -54,8 +54,6 @@
   <xsl:variable name="additional-id-replacements" as="element(replace)*" select="()"/>
 
   <xsl:variable name="base-id-replacements" as="element(replace)+">
-    <replace pattern="^boost::system::" with=""/>  <!-- TODO: verify this is generic enough not to be in a custom stylesheet -->
-    <replace pattern="boost__posix_time__ptime" with="ptime"/>  <!-- TODO: verify this is correct; it smells... (the input looks already partially processed) -->
     <replace pattern="::" with="__"/>
     <replace pattern="="  with="_eq_"/>
     <replace pattern="!"  with="_not_"/>
