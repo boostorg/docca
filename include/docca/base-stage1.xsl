@@ -171,7 +171,7 @@
   </xsl:template>
 
           <xsl:template mode="overload-list" match="memberdef">
-            <xsl:apply-templates select="briefdescription[not(. = ../preceding-sibling::*/briefdescription)]"/>
+            <xsl:apply-templates select="briefdescription[not(. eq preceding::briefdescription[parent::memberdef][1])]"/>
             <overloaded-member>
               <xsl:apply-templates mode="normalize-params" select="templateparamlist"/>
               <xsl:apply-templates mode="modifier" select="(@explicit, @friend, @static)[. eq 'yes'],
