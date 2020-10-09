@@ -167,11 +167,13 @@
   </xsl:template>
 
   <xsl:template match="memberdef[/doxygen/@d:page-type eq 'overload-list']">
-    <xsl:apply-templates mode="overload-list" select="../../sectiondef/memberdef"/>
+    <xsl:for-each-group select="../../sectiondef/memberdef" group-adjacent="briefdescription">
+      <xsl:apply-templates select="briefdescription"/>
+      <xsl:apply-templates mode="overload-list" select="current-group()"/>
+    </xsl:for-each-group>
   </xsl:template>
 
           <xsl:template mode="overload-list" match="memberdef">
-            <xsl:apply-templates select="briefdescription[not(. eq preceding::briefdescription[parent::memberdef][1])]"/>
             <overloaded-member>
               <xsl:apply-templates mode="normalize-params" select="templateparamlist"/>
               <xsl:apply-templates mode="modifier" select="(@explicit, @friend, @static)[. eq 'yes'],
