@@ -321,7 +321,7 @@
   </xsl:template>
 
           <xsl:template mode="member-nodes" match="innerclass | sectiondef[@kind eq 'public-type']">
-            <xsl:param name="public-types" tunnel="yes"/>
+            <xsl:param name="public-types" tunnel="yes" select="()"/>
             <xsl:sequence select="$public-types"/>
           </xsl:template>
 
