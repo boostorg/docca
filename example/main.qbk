@@ -22,6 +22,8 @@
 [template indexterm1[term1] '''<indexterm><primary>'''[term1]'''</primary></indexterm>''']
 [template indexterm2[term1 term2] '''<indexterm><primary>'''[term1]'''</primary><secondary>'''[term2]'''</secondary></indexterm>''']
 
+[template include_file[path][^<'''<ulink url="https://github.com/boostorg/docca/blob/master/example/include/'''[path]'''">'''[path]'''</ulink>'''>]]
+
 [section:ref Reference]
 [include qbk/reference.qbk]
 [endsect]
