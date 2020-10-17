@@ -252,6 +252,8 @@
           <xsl:template mode="access-level" match="@kind[starts-with(.,'protected')]">Protected </xsl:template>
           <xsl:template mode="access-level" match="@kind[starts-with(.,'private'  )]">Private </xsl:template>
 
+          <xsl:template mode="member-kind" match="@kind[contains(.,'-static-')]" priority="1"
+                                                                               >Static Members</xsl:template>
           <xsl:template mode="member-kind" match="@kind[ends-with(.,'func'  )]">Member Functions</xsl:template>
           <xsl:template mode="member-kind" match="@kind[ends-with(.,'attrib')]">Data Members</xsl:template>
 
