@@ -13,6 +13,12 @@ is extracted by Doxygen into an intermediate XML representation,
 then processed by the XSLT script via Saxon-HE to produce this
 [Boost.Quickbook page](https://www.boost.org/doc/libs/1_71_0/libs/beast/doc/html/beast/ref/boost__beast__buffers_cat.html).
 
+## Usage
+
+The following Doxygen configuration settings must be set as indicated:
+
+    DISTRIBUTE_GROUP_DOC = YES
+
 ## License
 
 Distributed under the Boost Software License, Version 1.0.

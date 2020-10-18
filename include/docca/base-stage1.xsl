@@ -317,9 +317,10 @@
     <xsl:variable name="member-nodes" as="element()*">
       <xsl:apply-templates mode="member-nodes" select="."/>
     </xsl:variable>
-    <xsl:apply-templates mode="member-row" select="$member-nodes">
-      <xsl:sort select="d:member-name(.)"/>
-    </xsl:apply-templates>
+    <xsl:for-each-group select="$member-nodes" group-by="d:member-name(.)">
+      <xsl:sort select="current-grouping-key()"/>
+      <xsl:apply-templates mode="member-row" select="."/>
+    </xsl:for-each-group>
   </xsl:template>
 
           <xsl:template mode="member-nodes" match="innerclass | sectiondef[@kind eq 'public-type']">
@@ -333,7 +334,14 @@
           </xsl:template>
 
           <xsl:template mode="member-nodes" match="sectiondef">
-            <xsl:sequence select="memberdef"/>
+            <!--
+              ASSUMPTION (for now): At least one member per section (table) must not be in a user-defined group.
+              Also, we may need a more robust mapping between a user-defined group's members and the sections
+              in which they belong. For now, we are using this partial test.
+            -->
+            <xsl:sequence select="memberdef,
+                                  ../sectiondef[@kind eq 'user-defined']/memberdef[(@kind||@prot||@static) =
+                                                               current()/memberdef/(@kind||@prot||@static)]"/>
           </xsl:template>
 
 
@@ -350,13 +358,11 @@
                   </xsl:template>
 
 
-          <!-- Only output a table row for the first instance of each name (ignore overloads) -->
-          <xsl:template mode="member-row" match="memberdef[name = preceding-sibling::memberdef/name]"/>
           <xsl:template mode="member-row" match="*">
             <tr>
               <td>
                 <bold>
-                  <ref d:refid="{@d:page-refid}">{d:member-name(.)}</ref>
+                  <ref d:refid="{@d:page-refid}">{current-grouping-key()}</ref>
                 </bold>
               </td>
               <td>
@@ -369,7 +375,7 @@
                     <xsl:apply-templates select="d:referenced-inner-class/compounddef/briefdescription"/>
                   </xsl:template>
                   <xsl:template mode="member-description" match="memberdef">
-                    <xsl:variable name="descriptions" select="../memberdef[name eq current()/name]/briefdescription"/>
+                    <xsl:variable name="descriptions" select="current-group()/briefdescription"/>
                     <!-- Pull in any overload descriptions but only if they vary -->
                     <xsl:for-each select="distinct-values($descriptions)">
                       <xsl:apply-templates select="$descriptions[. eq current()][1]"/>
