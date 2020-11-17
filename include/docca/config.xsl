@@ -15,8 +15,6 @@
     <replace pattern="BOOST_ASIO_DECL ?(.*)" with="$1"/>
   </xsl:variable>
 
-  <xsl:variable name="include-private-members" select="false()"/>
-
   <!-- TODO: refactor the stage-two-specific rules into a separate module that can't intefere with stage one -->
   <xsl:template mode="includes-template" match="location"
     >Defined in header [include_file {substring-after(@file, 'include/')}]

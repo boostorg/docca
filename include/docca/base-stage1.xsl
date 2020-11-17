@@ -121,7 +121,7 @@
                             | innerclass[@prot eq 'public'][not(d:should-ignore-inner-class(.))]"
                       tunnel="yes"/>
       <xsl:with-param name="friends"
-                      select="sectiondef[@kind eq 'friend']/memberdef[not(type eq 'friend class')]
+                      select="sectiondef[@kind eq 'friend']/memberdef[not(type = ('friend class','friend struct'))]
                                                                      [not(d:should-ignore-friend(.))]"
                       tunnel="yes"/>
     </xsl:next-match>
