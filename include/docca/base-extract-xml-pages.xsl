@@ -355,11 +355,13 @@
                     </d:referenced-inner-class>
                   </xsl:template>
 
-                  <!-- TODO: refactor this rule -->
                   <!-- Resolve the referenced page IDs for later link generation -->
-                  <xsl:template mode="compound-page-insert member-page-insert" match="ref" name="insert-referenced-page-id">
+                  <xsl:template mode="compound-page-insert member-page-insert" match="ref">
                     <xsl:attribute name="d:refid">
-                      <xsl:apply-templates mode="page-id" select="d:get-target-element(.)"/>
+                      <xsl:apply-templates mode="page-id" select="d:get-target-element(.)">
+                        <!-- For inline links to member pages, only link to the base page id (no overloads) -->
+                        <xsl:with-param name="is-overload-list-page" select="true()" tunnel="yes"/>
+                      </xsl:apply-templates>
                     </xsl:attribute>
                   </xsl:template>
 
