@@ -399,7 +399,8 @@
       <xsl:apply-templates mode="normalize-params" select="templateparamlist"/>
       <kind>{@kind}</kind>
       <name>{d:strip-ns(compoundname)}</name>
-      <xsl:for-each select="basecompoundref[not(d:should-ignore-base(.))]">
+      <xsl:for-each select="basecompoundref[not(d:should-ignore-base(.))]
+                                           [not(@prot eq 'private')]">
         <base>
           <prot>{@prot}</prot>
           <name>{d:strip-doc-ns(.)}</name>
