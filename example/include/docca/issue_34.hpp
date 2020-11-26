@@ -14,14 +14,20 @@ namespace example {
 */
 class issue_34
 {
+    /// Should not be displayed
     struct P
     {
     };
 
 public:
-    /** Private base classes should be hidden.
+    /// Base of Q
+    struct R
+    {
+    };
+
+    /** Q should be derived only from R
     */
-    struct Q : private P
+    struct Q : private P, R
     {
     };
 };
