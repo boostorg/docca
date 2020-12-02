@@ -365,6 +365,7 @@
               <td>
                 <bold>
                   <ref d:refid="{@d:page-refid}">{current-grouping-key()}</ref>
+                  <xsl:apply-templates mode="member-annotation" select="."/>
                 </bold>
               </td>
               <td>
@@ -372,6 +373,22 @@
               </td>
             </tr>
           </xsl:template>
+
+                  <xsl:template mode="member-annotation" match="*">
+                    <xsl:variable name="member-name" select="current-grouping-key()"/>
+                    <xsl:variable name="is-destructor" select="starts-with($member-name, '~')"/>
+                    <xsl:variable name="is-constructor" select="$member-name = d:strip-ns(/doxygen/compounddef/compoundname)"/>
+                    <xsl:if test="$is-destructor or $is-constructor">
+                      <xsl:text>&#160;</xsl:text>
+                      <role class="silver">
+                        <xsl:choose>
+                          <xsl:when test="$is-destructor">[destructor]</xsl:when>
+                          <xsl:otherwise                 >[constructor]</xsl:otherwise>
+                        </xsl:choose>
+                      </role>
+                    </xsl:if>
+                  </xsl:template>
+
 
                   <xsl:template mode="member-description" match="innerclass">
                     <xsl:apply-templates select="d:referenced-inner-class/compounddef/briefdescription"/>

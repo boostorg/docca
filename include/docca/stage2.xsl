@@ -146,6 +146,9 @@
   <xsl:template mode="before" match="emphasis">['</xsl:template>
   <xsl:template mode="after"  match="emphasis">]</xsl:template>
 
+  <xsl:template mode="before" match="role">[role {@class} </xsl:template>
+  <xsl:template mode="after"  match="role">]</xsl:template>
+
   <xsl:template mode="before" match="ulink">[@{@url} </xsl:template>
   <xsl:template mode="after"  match="ulink">]</xsl:template>
 
