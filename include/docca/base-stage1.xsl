@@ -380,7 +380,13 @@
                     <xsl:variable name="descriptions" select="current-group()/briefdescription"/>
                     <!-- Pull in any overload descriptions but only if they vary -->
                     <xsl:for-each select="distinct-values($descriptions)">
-                      <xsl:apply-templates select="$descriptions[. eq current()][1]"/>
+                      <!-- ASSUMPTION: <briefdescription> always contains one <para> -->
+                      <xsl:apply-templates select="$descriptions[. eq current()][1]/para/node()"/>
+                      <xsl:if test="position() ne last()">
+                        <br/>
+                        <role class="silver">—</role>
+                        <br/>
+                      </xsl:if>
                     </xsl:for-each>
                   </xsl:template>
 

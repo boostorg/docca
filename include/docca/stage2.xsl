@@ -188,6 +188,8 @@
 
   <xsl:template match="linebreak">{$nl}{$nl}</xsl:template>
 
+  <xsl:template match="br">[br]</xsl:template>
+
   <xsl:template mode="before" match="programlisting">{$nl}```{$nl}</xsl:template>
   <xsl:template mode="after"  match="programlisting"     >```{$nl}</xsl:template>
 
