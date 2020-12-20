@@ -201,6 +201,10 @@
   <!-- Ignore whitespace-only text nodes -->
   <xsl:template match="text()[not(normalize-space())]"/>
 
+  <xsl:template match="text()">
+    <xsl:sequence select="d:qb-escape(.)"/>
+  </xsl:template>
+
   <!-- Boilerplate default rules for elements -->
   <!-- Convention of this stylesheet is to favor use of just "before" and "after"
        and to utilize "append" (and maybe "insert") only when a distinction is needed -->
