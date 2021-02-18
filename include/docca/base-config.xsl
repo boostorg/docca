@@ -5,7 +5,11 @@
   exclude-result-prefixes="xs d"
   expand-text="yes">
 
-<!-- CONFIG_TEMPLATE -->
+  <!-- Projects should override these default values using a project-specific custom-overrides.xsl module -->
+  <xsl:variable name="doc-ref" select="'docca.ref'"/>
+  <xsl:variable name="doc-ns" select="'example'"/>
+
+  <xsl:variable name="include-private-members" select="false()"/>
 
   <xsl:variable name="additional-id-replacements" as="element(replace)*">
     <replace pattern="boost::asio::error" with=""/>
@@ -19,8 +23,6 @@
   <xsl:template mode="includes-template" match="location"
     >Defined in header [include_file {substring-after(@file, 'include/')}]
   </xsl:template>
-
-<!-- INCLUDES_FOOT_TEMPLATE -->
 
   <xsl:function name="d:should-ignore-compound">
     <xsl:param name="element" as="element(compound)"/>

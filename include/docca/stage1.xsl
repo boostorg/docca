@@ -5,7 +5,9 @@
   expand-text="yes">
 
   <xsl:import href="base-stage1.xsl"/>
+  <xsl:import href="base-config.xsl"/>
 
-  <xsl:include href="config.xsl"/>
+  <!-- Custom config module copied from project-specific directory -->
+  <xsl:include href="custom-overrides.xsl"/>
 
 </xsl:stylesheet>

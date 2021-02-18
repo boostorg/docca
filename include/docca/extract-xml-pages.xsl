@@ -5,8 +5,9 @@
   exclude-result-prefixes="xs d">
 
   <xsl:import href="base-extract-xml-pages.xsl"/>
+  <xsl:import href="base-config.xsl"/>
 
-  <!-- TODO: consider refactoring to stage-specific configurations -->
-  <xsl:include href="config.xsl"/>
+  <!-- Custom config module copied from project-specific directory -->
+  <xsl:include href="custom-overrides.xsl"/>
 
 </xsl:stylesheet>
