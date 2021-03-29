@@ -11,15 +11,10 @@
 
 import path ;
 import saxonhe ;
-import xsltproc ;
 
 
 .here  = [ path.make [ modules.binding $(__name__) ] ] ;
 .here = $(.here:D) ;
-
-
-.xsltproc = [ xsltproc.name ] ;
-.xsltproc ?= xsltproc ;
 
 
 rule reference ( target : index overrides )
@@ -52,9 +47,6 @@ rule reference ( target : index overrides )
     # Copy the project-specific config XSLT
     make custom-overrides.xsl : $(overrides) : @docca.copy_script ;
 
-    # This is to initially create the directory as a side effect; I'm sure there's a better way...
-    make xml-pages/directory/placeholder : $(index) : @docca.null_action ;
-
     #-------------------------------------------------------------------------------
     #
     # Run index.xml through the first transformation stage
@@ -74,10 +66,6 @@ rule reference ( target : index overrides )
 
     # This is just to make the directory eligible as a source
     make xml-pages : index.xml : @docca.null_action ;
-
-    # This is to initially create the directory as a side effect; I'm sure there's a better way...
-    make stage1/results/directory/placeholder : xml-pages.xml : @docca.null_action ;
-    make stage2/results/directory/placeholder : xml-pages.xml : @docca.null_action ;
 
     # TODO: figure out why this (and the following stage) get built every time
     make stage1/results
@@ -116,15 +104,6 @@ rule reference ( target : index overrides )
           stage2/results
         : @saxonhe.saxonhe
         ;
-
-
-    make combine.xslt : index.xml : @docca.null_action ;
-
-    make $(target:S=xml)
-        : combine.xslt
-          index.xml
-        : @docca.call-xsltproc
-        ;
 }
 
 
@@ -139,10 +118,4 @@ actions copy_script
 actions null_action
 {
     touch -c $(1) ;
-}
-
-
-actions call-xsltproc
-{
-    "$(.xsltproc)" $(2) > $(1)
 }
