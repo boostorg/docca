@@ -33,19 +33,19 @@ rule reference ( target : index overrides )
     #        imports the former) must be run again.
     #
     local src-dir = $(.here)/include/docca ;
-    make extract-xml-pages.xsl      : $(src-dir)/extract-xml-pages.xsl      : @docca.copy_script ;
-    make base-extract-xml-pages.xsl : $(src-dir)/base-extract-xml-pages.xsl : @docca.copy_script ;
-    make common.xsl                 : $(src-dir)/common.xsl                 : @docca.copy_script ;
-    make stage1.xsl                 : $(src-dir)/stage1.xsl                 : @docca.copy_script ;
-    make base-stage1.xsl            : $(src-dir)/base-stage1.xsl            : @docca.copy_script ;
-    make stage2.xsl                 : $(src-dir)/stage2.xsl                 : @docca.copy_script ;
-    make base-stage2.xsl            : $(src-dir)/base-stage2.xsl            : @docca.copy_script ;
-    make assemble-quickbook.xsl     : $(src-dir)/assemble-quickbook.xsl     : @docca.copy_script ;
-    make emphasized-types.xsl       : $(src-dir)/emphasized-types.xsl       : @docca.copy_script ;
-    make base-config.xsl            : $(src-dir)/base-config.xsl            : @docca.copy_script ;
+    make extract-xml-pages.xsl      : $(src-dir)/extract-xml-pages.xsl      : @common.copy ;
+    make base-extract-xml-pages.xsl : $(src-dir)/base-extract-xml-pages.xsl : @common.copy ;
+    make common.xsl                 : $(src-dir)/common.xsl                 : @common.copy ;
+    make stage1.xsl                 : $(src-dir)/stage1.xsl                 : @common.copy ;
+    make base-stage1.xsl            : $(src-dir)/base-stage1.xsl            : @common.copy ;
+    make stage2.xsl                 : $(src-dir)/stage2.xsl                 : @common.copy ;
+    make base-stage2.xsl            : $(src-dir)/base-stage2.xsl            : @common.copy ;
+    make assemble-quickbook.xsl     : $(src-dir)/assemble-quickbook.xsl     : @common.copy ;
+    make emphasized-types.xsl       : $(src-dir)/emphasized-types.xsl       : @common.copy ;
+    make base-config.xsl            : $(src-dir)/base-config.xsl            : @common.copy ;
 
     # Copy the project-specific config XSLT
-    make custom-overrides.xsl : $(overrides) : @docca.copy_script ;
+    make custom-overrides.xsl : $(overrides) : @common.copy ;
 
     #-------------------------------------------------------------------------------
     #
@@ -104,14 +104,6 @@ rule reference ( target : index overrides )
           stage2/results
         : @saxonhe.saxonhe
         ;
-}
-
-
-# Make a copy of the given file.
-#
-actions copy_script
-{
-    cp $(2[1]) $(1)
 }
 
 
