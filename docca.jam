@@ -22,32 +22,42 @@ rule reference ( target : index overrides )
 {
     local project = [ project.current ] ;
 
-    # Copy all the XSLT modules to the target directory.
-    #
-    # FIXME: Change this so we can just specify a directory,
-    #        rather than every file individually.
-    #
-    #        Also, somehow force dependencies in a general way
-    #        such that the XSLT has to be executed again
-    #        if any of the modules change. For example,
-    #        if base-extract-xml-pages.xml changes, then
-    #        an invocation of extract-xml-pages.xsl (which
-    #        imports the former) must be run again.
-    #
-    local src-dir = $(.here)/include/docca ;
-    make-explicit extract-xml-pages.xsl      $(project) : $(src-dir)/extract-xml-pages.xsl      : @common.copy ;
-    make-explicit base-extract-xml-pages.xsl $(project) : $(src-dir)/base-extract-xml-pages.xsl : @common.copy ;
-    make-explicit common.xsl                 $(project) : $(src-dir)/common.xsl                 : @common.copy ;
-    make-explicit stage1.xsl                 $(project) : $(src-dir)/stage1.xsl                 : @common.copy ;
-    make-explicit base-stage1.xsl            $(project) : $(src-dir)/base-stage1.xsl            : @common.copy ;
-    make-explicit stage2.xsl                 $(project) : $(src-dir)/stage2.xsl                 : @common.copy ;
-    make-explicit base-stage2.xsl            $(project) : $(src-dir)/base-stage2.xsl            : @common.copy ;
-    make-explicit assemble-quickbook.xsl     $(project) : $(src-dir)/assemble-quickbook.xsl     : @common.copy ;
-    make-explicit emphasized-types.xsl       $(project) : $(src-dir)/emphasized-types.xsl       : @common.copy ;
-    make-explicit base-config.xsl            $(project) : $(src-dir)/base-config.xsl            : @common.copy ;
-
     # Copy the project-specific config XSLT
-    make-explicit custom-overrides.xsl $(project) : $(overrides) : @common.copy ;
+    copy-xsl $(overrides) $(project) custom-overrides.xsl ;
+
+    # Copy all the XSLT modules to the target directory.
+    # Also, specify their dependencies.
+    local src-dir = $(.here)/include/docca ;
+    copy-xsl $(src-dir)/common.xsl             $(project) ;
+    copy-xsl $(src-dir)/base-config.xsl        $(project) ;
+    copy-xsl $(src-dir)/emphasized-types.xsl   $(project) ;
+    copy-xsl $(src-dir)/assemble-quickbook.xsl $(project) ;
+
+    copy-xsl $(src-dir)/base-extract-xml-pages.xsl $(project) : common.xsl ;
+    copy-xsl $(src-dir)/base-stage1.xsl            $(project) : common.xsl ;
+
+    copy-xsl $(src-dir)/extract-xml-pages.xsl $(project)
+        : base-extract-xml-pages.xsl
+          base-config.xsl
+          custom-overrides.xsl
+        ;
+
+    copy-xsl $(src-dir)/stage1.xsl $(project)
+        : base-stage1.xsl
+          base-config.xsl
+          custom-overrides.xsl
+        ;
+
+    copy-xsl $(src-dir)/base-stage2.xsl $(project)
+        : common.xsl
+          emphasized-types.xsl
+        ;
+
+    copy-xsl $(src-dir)/stage2.xsl $(project)
+        : base-stage2.xsl
+          base-config.xsl
+          custom-overrides.xsl
+        ;
 
     #-------------------------------------------------------------------------------
     #
@@ -57,41 +67,21 @@ rule reference ( target : index overrides )
     make-explicit xml-pages.xml $(project)
         : $(index)
           extract-xml-pages.xsl
-
-          # Make bjam aware of additional dependencies
-          base-extract-xml-pages.xsl
-          base-config.xsl
-          custom-overrides.xsl
-          common.xsl
         : @saxonhe.saxonhe
         ;
 
     # This is just to make the directory eligible as a source
     make-explicit xml-pages $(project) : xml-pages.xml : @docca.null_action ;
 
-    # TODO: figure out why this (and the following stage) get built every time
     make-explicit stage1/results $(project)
         : xml-pages
           stage1.xsl
-
-          # additional dependencies
-          base-stage1.xsl
-          base-config.xsl
-          custom-overrides.xsl
-          common.xsl
         : @saxonhe.saxonhe_dir
         ;
 
     make-explicit stage2/results $(project)
         : stage1/results
           stage2.xsl
-
-          # additional dependencies
-          emphasized-types.xsl
-          base-stage2.xsl
-          base-config.xsl
-          custom-overrides.xsl
-          common.xsl
         : @saxonhe.saxonhe_dir
         ;
 
@@ -104,6 +94,17 @@ rule reference ( target : index overrides )
           #       in the XSLT (which it is!)
           stage2/results
         : @saxonhe.saxonhe
+        ;
+}
+
+
+local rule copy-xsl ( source project target ? : dependencies * )
+{
+    target ?= $(source:D=) ;
+    make-explicit $(target) $(project)
+        : $(source)
+        : @common.copy
+        : <dependency>$(dependencies)
         ;
 }
 
