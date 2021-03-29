@@ -41,6 +41,9 @@
 
   <xsl:template match="heading">{$nl}[heading {.}]</xsl:template>
 
+  <!-- Sections inside tables don't render well; just display the heading text inline (e.g. "See Also") -->
+  <xsl:template match="td//heading">{$nl}{.} </xsl:template>
+
   <xsl:template match="location">
     <xsl:apply-templates mode="includes-template" select="."/>
   </xsl:template>
@@ -168,6 +171,25 @@
 
           <xsl:template mode="list-item-label" match="itemizedlist">*</xsl:template>
           <xsl:template mode="list-item-label" match="orderedlist" >#</xsl:template>
+
+  <!-- Lists inside a table cell require the use of "explicit list tags" for proper rendering -->
+  <xsl:template match="td//itemizedlist
+                     | td//orderedlist">
+    <xsl:text>[</xsl:text>
+    <xsl:apply-templates mode="explicit-list-name" select="."/>
+    <xsl:text> </xsl:text>
+    <xsl:apply-templates mode="explicit-list-item"/>
+    <xsl:text>]</xsl:text>
+  </xsl:template>
+
+          <xsl:template mode="explicit-list-name" match="itemizedlist">itemized_list</xsl:template>
+          <xsl:template mode="explicit-list-name" match="orderedlist">ordered_list</xsl:template>
+
+          <xsl:template mode="explicit-list-item" match="listitem">
+            <xsl:text>[</xsl:text>
+            <xsl:apply-templates/>
+            <xsl:text>]</xsl:text>
+          </xsl:template>
 
   <xsl:template mode="append" match="/page/div[1]">
     <xsl:if test="$DEBUG">
