@@ -67,7 +67,7 @@ rule reference ( target : index overrides )
         ;
 
     # This is just to make the directory eligible as a source
-    make-explicit xml-pages $(project) : index.xml : @docca.null_action ;
+    make-explicit xml-pages $(project) : xml-pages.xml : @docca.null_action ;
 
     # TODO: figure out why this (and the following stage) get built every time
     make-explicit stage1/results $(project)
@@ -75,7 +75,6 @@ rule reference ( target : index overrides )
           stage1.xsl
 
           # additional dependencies
-          xml-pages.xml
           base-stage1.xsl
           base-config.xsl
           custom-overrides.xsl
