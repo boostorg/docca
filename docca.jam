@@ -10,6 +10,7 @@
 
 
 import path ;
+import project ;
 import saxonhe ;
 
 
@@ -19,7 +20,8 @@ import saxonhe ;
 
 rule reference ( target : index overrides )
 {
-    #
+    local project = [ project.current ] ;
+
     # Copy all the XSLT modules to the target directory.
     #
     # FIXME: Change this so we can just specify a directory,
@@ -33,26 +35,26 @@ rule reference ( target : index overrides )
     #        imports the former) must be run again.
     #
     local src-dir = $(.here)/include/docca ;
-    make extract-xml-pages.xsl      : $(src-dir)/extract-xml-pages.xsl      : @common.copy ;
-    make base-extract-xml-pages.xsl : $(src-dir)/base-extract-xml-pages.xsl : @common.copy ;
-    make common.xsl                 : $(src-dir)/common.xsl                 : @common.copy ;
-    make stage1.xsl                 : $(src-dir)/stage1.xsl                 : @common.copy ;
-    make base-stage1.xsl            : $(src-dir)/base-stage1.xsl            : @common.copy ;
-    make stage2.xsl                 : $(src-dir)/stage2.xsl                 : @common.copy ;
-    make base-stage2.xsl            : $(src-dir)/base-stage2.xsl            : @common.copy ;
-    make assemble-quickbook.xsl     : $(src-dir)/assemble-quickbook.xsl     : @common.copy ;
-    make emphasized-types.xsl       : $(src-dir)/emphasized-types.xsl       : @common.copy ;
-    make base-config.xsl            : $(src-dir)/base-config.xsl            : @common.copy ;
+    make-explicit extract-xml-pages.xsl      $(project) : $(src-dir)/extract-xml-pages.xsl      : @common.copy ;
+    make-explicit base-extract-xml-pages.xsl $(project) : $(src-dir)/base-extract-xml-pages.xsl : @common.copy ;
+    make-explicit common.xsl                 $(project) : $(src-dir)/common.xsl                 : @common.copy ;
+    make-explicit stage1.xsl                 $(project) : $(src-dir)/stage1.xsl                 : @common.copy ;
+    make-explicit base-stage1.xsl            $(project) : $(src-dir)/base-stage1.xsl            : @common.copy ;
+    make-explicit stage2.xsl                 $(project) : $(src-dir)/stage2.xsl                 : @common.copy ;
+    make-explicit base-stage2.xsl            $(project) : $(src-dir)/base-stage2.xsl            : @common.copy ;
+    make-explicit assemble-quickbook.xsl     $(project) : $(src-dir)/assemble-quickbook.xsl     : @common.copy ;
+    make-explicit emphasized-types.xsl       $(project) : $(src-dir)/emphasized-types.xsl       : @common.copy ;
+    make-explicit base-config.xsl            $(project) : $(src-dir)/base-config.xsl            : @common.copy ;
 
     # Copy the project-specific config XSLT
-    make custom-overrides.xsl : $(overrides) : @common.copy ;
+    make-explicit custom-overrides.xsl $(project) : $(overrides) : @common.copy ;
 
     #-------------------------------------------------------------------------------
     #
     # Run index.xml through the first transformation stage
     # (assembling and splitting the XML into page-specific files).
     #
-    make xml-pages.xml
+    make-explicit xml-pages.xml $(project)
         : $(index)
           extract-xml-pages.xsl
 
@@ -65,10 +67,10 @@ rule reference ( target : index overrides )
         ;
 
     # This is just to make the directory eligible as a source
-    make xml-pages : index.xml : @docca.null_action ;
+    make-explicit xml-pages $(project) : index.xml : @docca.null_action ;
 
     # TODO: figure out why this (and the following stage) get built every time
-    make stage1/results
+    make-explicit stage1/results $(project)
         : xml-pages
           stage1.xsl
 
@@ -81,7 +83,7 @@ rule reference ( target : index overrides )
         : @saxonhe.saxonhe_dir
         ;
 
-    make stage2/results
+    make-explicit stage2/results $(project)
         : stage1/results
           stage2.xsl
 
@@ -104,6 +106,14 @@ rule reference ( target : index overrides )
           stage2/results
         : @saxonhe.saxonhe
         ;
+}
+
+
+local rule make-explicit ( target project : sources * : make-rule + : reqs *
+    : ureqs * )
+{
+    make $(target) : $(sources) : $(make-rule) : $(reqs) : $(ureqs) ;
+    $(project).mark-target-as-explicit $(target) ;
 }
 
 
