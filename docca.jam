@@ -9,20 +9,54 @@
 #
 
 
+import doxygen ;
 import path ;
 import project ;
 import saxonhe ;
+import sequence ;
 
 
 .here  = [ path.make [ modules.binding $(__name__) ] ] ;
 .here = $(.here:D) ;
 
 
-rule reference ( target : index overrides )
+rule reference ( target : overrides sources * : requirements * )
 {
     local project = [ project.current ] ;
     local target-dir = $(target:B).dir ;
 
+    # Generate doxygen configuration file from sources
+    sources = [ sequence.transform fix-source $(project) : $(sources) ] ;
+    doxyfile $(target-dir)/sources.dox
+        : $(sources)
+        : $(requirements)
+          <doxygen:param>GENERATE_HTML=NO
+          <doxygen:param>GENERATE_XML=YES
+          <doxygen:param>XML_OUTPUT=$(target-dir)
+        ;
+    $(project).mark-target-as-explicit $(target-dir)/sources.dox ;
+
+    #--------------------------------------------------------------------------
+    #
+    # Invoke Doxygen to process the header files and produce the XML
+    # containing the description of the C++ declarations and extracted
+    # Javadoc comments.
+    doxygen-xml-multifile $(target-dir)/stamp
+        : $(target-dir)/sources.dox
+        : $(requirements)
+        ;
+    $(project).mark-target-as-explicit $(target-dir)/stamp ;
+
+
+    # Adopt as a target index.xml which was created as a side-effect
+    make-explicit $(target-dir)/index.xml $(project)
+        : $(target-dir)/stamp
+        : @docca.null_action
+        : $(requirements)
+        ;
+
+    #--------------------------------------------------------------------------
+    #
     # Copy the project-specific config XSLT
     copy-xsl $(overrides) $(project) $(target-dir)/custom-overrides.xsl ;
 
@@ -71,15 +105,16 @@ rule reference ( target : index overrides )
     # (assembling and splitting the XML into page-specific files).
     #
     make-explicit $(target-dir)/xml-pages.xml $(project)
-        : $(index)
+        : $(target-dir)/index.xml
           $(target-dir)/extract-xml-pages.xsl
         : @saxonhe.saxonhe
         ;
 
-    # This is just to make the directory eligible as a source
+    # Adopt as a target xml-pages directory which was created as a side-effect
     make-explicit $(target-dir)/xml-pages $(project)
         : $(target-dir)/xml-pages.xml
         : @docca.null_action
+        : $(requirements)
         ;
 
     make-explicit $(target-dir)/stage1/results $(project)
@@ -135,6 +170,22 @@ local rule make-explicit ( target project : sources * : make-rule + : reqs *
 {
     make $(target) : $(sources) : $(make-rule) : $(reqs) : $(ureqs) ;
     $(project).mark-target-as-explicit $(target) ;
+}
+
+
+local rule fix-source ( project path )
+{
+    # Unfortunately, rule doxygen.run was written with the assumption that
+    # current project is located in the current directory (which is very likely
+    # to not be the case). We have to convert paths into a form that is both
+    # usable by doxygen and usable by b2 from the current project. This
+    # effectively means absolute paths.
+    #
+    # NOTE: doxygen.run should really do this by itself.
+
+    path = [ path.root $(path) [ $(project).location ] ] ;
+    path = [ path.root $(path) [ path.pwd ] ] ;
+    return $(path) ;
 }
 
 
