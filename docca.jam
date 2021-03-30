@@ -12,6 +12,7 @@
 import doxygen ;
 import path ;
 import project ;
+import quickbook ;
 import saxonhe ;
 import sequence ;
 
