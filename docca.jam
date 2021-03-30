@@ -10,6 +10,7 @@
 
 
 import doxygen ;
+import param ;
 import path ;
 import project ;
 import quickbook ;
@@ -21,8 +22,15 @@ import sequence ;
 .here = $(.here:D) ;
 
 
-rule reference ( target : overrides sources * : requirements * )
+rule reference ( target : sources * : requirements * : default-build *
+    : usage-requirements * )
 {
+    param.handle-named-params
+        sources requirements default-build usage-requirements ;
+
+    local overrides = $(sources[1]) ;
+    sources = $(sources[2-]) ;
+
     local project = [ project.current ] ;
     local target-dir = $(target:S=) ;
     target-dir = $(target-dir:B=_$(target-dir:B)-dir) ;
@@ -35,6 +43,7 @@ rule reference ( target : overrides sources * : requirements * )
           <doxygen:param>GENERATE_HTML=NO
           <doxygen:param>GENERATE_XML=YES
           <doxygen:param>XML_OUTPUT=$(target-dir)
+        : $(default-build)
         ;
     $(project).mark-target-as-explicit $(target-dir)/sources.dox ;
 
@@ -46,6 +55,7 @@ rule reference ( target : overrides sources * : requirements * )
     doxygen-xml-multifile $(target-dir)/stamp
         : $(target-dir)/sources.dox
         : $(requirements)
+        : $(default-build)
         ;
     $(project).mark-target-as-explicit $(target-dir)/stamp ;
 
@@ -54,7 +64,6 @@ rule reference ( target : overrides sources * : requirements * )
     make-explicit $(target-dir)/index.xml $(project)
         : $(target-dir)/stamp
         : @docca.null_action
-        : $(requirements)
         ;
 
     #--------------------------------------------------------------------------
@@ -116,19 +125,20 @@ rule reference ( target : overrides sources * : requirements * )
     make-explicit $(target-dir)/xml-pages $(project)
         : $(target-dir)/xml-pages.xml
         : @docca.null_action
-        : $(requirements)
         ;
 
     make-explicit $(target-dir)/stage1/results $(project)
         : $(target-dir)/xml-pages
           $(target-dir)/stage1.xsl
         : @saxonhe.saxonhe_dir
+        : $(requirements)
         ;
 
     make-explicit $(target-dir)/stage2/results $(project)
         : $(target-dir)/stage1/results
           $(target-dir)/stage2.xsl
         : @saxonhe.saxonhe_dir
+        : $(requirements)
         ;
 
     make $(target)
@@ -140,6 +150,8 @@ rule reference ( target : overrides sources * : requirements * )
           #       in the XSLT (which it is!)
           $(target-dir)/stage2/results
         : @saxonhe.saxonhe
+        : $(requirements)
+        : $(usage-requirements)
         ;
 }
 
