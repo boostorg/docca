@@ -24,7 +24,8 @@ import sequence ;
 rule reference ( target : overrides sources * : requirements * )
 {
     local project = [ project.current ] ;
-    local target-dir = $(target:B).dir ;
+    local target-dir = $(target:S=) ;
+    target-dir = $(target-dir:B=_$(target-dir:B)-dir) ;
 
     # Generate doxygen configuration file from sources
     sources = [ sequence.transform fix-source $(project) : $(sources) ] ;
