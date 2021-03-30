@@ -11,7 +11,6 @@
 project json/doc ;
 
 import boostbook ;
-import quickbook ;
 import ../../../tools/docca/docca.jam ;
 
 
