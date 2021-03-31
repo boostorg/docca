@@ -171,10 +171,10 @@ local rule copy-xsl ( source project target-or-dir : dependencies * )
         target = $(source:D=) ;
     }
 
-    make-explicit $(target:D=$(dir)) $(project)
+    make-explicit $(target:TD=$(dir)) $(project)
         : $(source)
         : @common.copy
-        : <dependency>$(dependencies:D=$(dir))
+        : <dependency>$(dependencies:TD=$(dir))
         ;
 }
 
