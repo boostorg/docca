@@ -63,7 +63,7 @@ rule reference ( target : sources * : requirements * : default-build *
     # Adopt as a target index.xml which was created as a side-effect
     make-explicit $(target-dir)/index.xml $(project)
         : $(target-dir)/stamp
-        : @docca.null_action
+        : @docca.null-action
         ;
 
     #--------------------------------------------------------------------------
@@ -124,7 +124,7 @@ rule reference ( target : sources * : requirements * : default-build *
     # Adopt as a target xml-pages directory which was created as a side-effect
     make-explicit $(target-dir)/xml-pages $(project)
         : $(target-dir)/xml-pages.xml
-        : @docca.null_action
+        : @docca.null-action
         ;
 
     make-explicit $(target-dir)/stage1/results $(project)
@@ -203,7 +203,7 @@ local rule fix-source ( project path )
 }
 
 
-actions null_action
+rule null-action
 {
-    touch -c $(1) ;
+    NOUPDATE $(1) ;
 }
