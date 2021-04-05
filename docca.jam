@@ -9,13 +9,17 @@
 #
 
 
+import "class" : new ;
 import doxygen ;
 import param ;
 import path ;
 import project ;
+import property-set ;
 import quickbook ;
 import saxonhe ;
 import sequence ;
+import toolset ;
+import type ;
 
 
 .here  = [ path.make [ modules.binding $(__name__) ] ] ;
@@ -141,7 +145,7 @@ rule reference ( target : sources * : requirements * : default-build *
         : $(requirements)
         ;
 
-    make $(target)
+    generate $(target)
         : $(target-dir)/xml-pages.xml
           $(target-dir)/assemble-quickbook.xsl
 
@@ -149,10 +153,31 @@ rule reference ( target : sources * : requirements * : default-build *
           #       rather than relying on it being hard-coded
           #       in the XSLT (which it is!)
           $(target-dir)/stage2/results
-        : @saxonhe.saxonhe
-        : $(requirements)
+        : <generating-rule>@docca.make-qbk
+          $(requirements)
+        : $(default-build)
         : $(usage-requirements)
         ;
+}
+
+
+rule make-qbk ( project name : property-set : sources * )
+{
+        local action-name = saxonhe.saxonhe ;
+        local relevant = [ toolset.relevant $(action-name) ] ;
+        local action = [
+              new action $(sources)
+            : $(action-name)
+            : [ $(property-set).relevant $(relevant) ]
+            ] ;
+        local target = [
+              new file-target $(name) exact
+            : [ type.type $(name) ]
+            : $(project)
+            : $(action)
+            ] ;
+        local path = [ path.root $(name) [ $(target).path ] ] ;
+        return [ property-set.create <include>$(path:D) ] $(target) ;
 }
 
 

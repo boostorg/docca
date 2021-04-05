@@ -69,11 +69,6 @@ docca.reference reference.qbk
 #        saxonhe.saxonhe
 #    ;
 
-# We have to make a copy of reference.qbk and put it
-# in a place where the static .qbk files can find it
-#
-install qbk : reference.qbk ;
-
 #-------------------------------------------------------------------------------
 #
 # Produce the Boost.Book XML from the QuickBook
@@ -92,8 +87,8 @@ xml json_doc
     :
         main.qbk
     :
+        <use>reference.qbk
         <dependency>images
-        <dependency>qbk
     ;
 
 explicit json_doc ;

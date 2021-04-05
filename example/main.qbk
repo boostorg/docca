@@ -25,7 +25,7 @@
 [template include_file[path][^<'''<ulink url="https://github.com/boostorg/docca/blob/master/example/include/'''[path]'''">'''[path]'''</ulink>'''>]]
 
 [section:ref Reference]
-[include qbk/reference.qbk]
+[include reference.qbk]
 [endsect]
 
 [xinclude index.xml]
