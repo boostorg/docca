@@ -230,5 +230,4 @@ local rule fix-source ( project path )
 
 rule null-action
 {
-    NOUPDATE $(1) ;
 }
