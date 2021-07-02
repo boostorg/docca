@@ -234,7 +234,15 @@
   <xsl:template match="&SYNTAX_BLOCK;//text()
                      | &CODE_BLOCK;//text()
                      | programlisting//text()">
-    <xsl:sequence select="."/>
+    <!--
+      This implementation (using <xsl:sequence> returning a string, instead of <xsl:value-of>) can
+      result in a contiguous sequence of strings, which gets converted to a text node having space
+      separators between the strings. This is desirable in some cases and not in others.
+
+      TODO: Tighten the rules so that we explicitly add the spaces where we need them but otherwise
+      strip them out (probably by using <xsl:value-of> for the rules matching text nodes).
+    -->
+    <xsl:sequence select="string(.)"/>
   </xsl:template>
 
   <!-- Boilerplate default rules for elements -->
