@@ -6,6 +6,9 @@
                         | self::variable
                         | self::overloaded-member
                         ]">
+<!ENTITY CODE_BLOCK "*[ self::computeroutput[not(ref)]
+                      | self::code
+                      ]">
 ]>
 <xsl:stylesheet version="3.0"
   xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
@@ -78,10 +81,10 @@
   <xsl:template priority="1"
                 match="&SYNTAX_BLOCK;//ref">``[link {$doc-ref}.{@d:refid} {d:qb-escape(.)}]``</xsl:template>
   <xsl:template match="td[1]//ref"           >[link {$doc-ref}.{@d:refid} {d:qb-escape(.)}]</xsl:template>
-  <xsl:template match="ref"                  >[link {$doc-ref}.{@d:refid} `{d:qb-escape(.)}`]</xsl:template>
+  <xsl:template match="ref"                  >[link {$doc-ref}.{@d:refid} `{.}`]</xsl:template>
 
-  <xsl:template mode="before" match="computeroutput[not(ref)] | code">`</xsl:template>
-  <xsl:template mode="after"  match="computeroutput[not(ref)] | code">`</xsl:template>
+  <xsl:template mode="before" match="&CODE_BLOCK;">`</xsl:template>
+  <xsl:template mode="after"  match="&CODE_BLOCK;">`</xsl:template>
 
   <xsl:template mode="before" match="enum/name">enum </xsl:template>
 
@@ -220,10 +223,26 @@
   <xsl:template mode="after" match="codeline">{$nl}</xsl:template>
 
   <!-- Ignore whitespace-only text nodes -->
-  <xsl:template match="text()[not(normalize-space())]"/>
+  <xsl:template match="text()[not(normalize-space())]" priority="1"/>
 
+  <!-- By default, escape Quickbook markup (square brackets) -->
   <xsl:template match="text()">
     <xsl:sequence select="d:qb-escape(.)"/>
+  </xsl:template>
+
+  <!-- But don't escape them in these contexts -->
+  <xsl:template match="&SYNTAX_BLOCK;//text()
+                     | &CODE_BLOCK;//text()
+                     | programlisting//text()">
+    <!--
+      This implementation (using <xsl:sequence> returning a string, instead of <xsl:value-of>) can
+      result in a contiguous sequence of strings, which gets converted to a text node having space
+      separators between the strings. This is desirable in some cases and not in others.
+
+      TODO: Tighten the rules so that we explicitly add the spaces where we need them but otherwise
+      strip them out (probably by using <xsl:value-of> for the rules matching text nodes).
+    -->
+    <xsl:sequence select="string(.)"/>
   </xsl:template>
 
   <!-- Boilerplate default rules for elements -->
