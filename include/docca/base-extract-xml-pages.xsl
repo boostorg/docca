@@ -370,13 +370,20 @@
                           <xsl:function name="d:get-target-element" as="element()">
                           -->
                             <xsl:param name="ref" as="element()"/> <!-- <ref> or <innerclass> or... -->
+                            <xsl:apply-templates mode="get-target-element" select="$ref">
+                              <xsl:with-param name="ref" select="$ref" tunnel="yes"/>
+                            </xsl:apply-templates>
+                          </xsl:function>
+
+                          <xsl:template mode="get-target-element" match="*">
+                            <xsl:param name="ref" as="element()" tunnel="yes"/>
                             <xsl:variable name="referenced-elements" select="key('elements-by-refid', $ref/@refid, $index-xml)"/>
                             <xsl:variable name="result" as="element()?">
                               <xsl:choose>
                                 <!-- Handle the case where the referenced element appears two or more times in index.xml -->
                                 <!-- If there's no ambiguity, we're done! -->
                                 <xsl:when test="count($referenced-elements) eq 1">
-                                  <xsl:apply-templates mode="find-target-element" select="$referenced-elements"/>
+                                  <xsl:apply-templates mode="find-actual-target-element" select="$referenced-elements"/>
                                 </xsl:when>
                                 <xsl:otherwise>
                                   <!-- Otherwise, see if a namespace in the link text successfully disambiguates -->
@@ -389,7 +396,7 @@
                                   </xsl:variable>
                                   <xsl:choose>
                                     <xsl:when test="count($qualified-reference) eq 1">
-                                      <xsl:apply-templates mode="find-target-element" select="$qualified-reference"/>
+                                      <xsl:apply-templates mode="find-actual-target-element" select="$qualified-reference"/>
                                     </xsl:when>
                                     <xsl:otherwise>
                                       <!-- Otherwise, favor the member that's in the same class or namespace as the current page -->
@@ -399,11 +406,11 @@
                                       </xsl:variable>
                                       <xsl:choose>
                                         <xsl:when test="count($sibling-reference) eq 1">
-                                          <xsl:apply-templates mode="find-target-element" select="$sibling-reference"/>
+                                          <xsl:apply-templates mode="find-actual-target-element" select="$sibling-reference"/>
                                         </xsl:when>
                                         <!-- If all else fails, give up and just use the first one -->
                                         <xsl:otherwise>
-                                          <xsl:apply-templates mode="find-target-element" select="$referenced-elements[1]"/>
+                                          <xsl:apply-templates mode="find-actual-target-element" select="$referenced-elements[1]"/>
                                         </xsl:otherwise>
                                       </xsl:choose>
                                     </xsl:otherwise>
@@ -415,15 +422,55 @@
                               <xsl:message>Unable to find referenced ID: <xsl:value-of select="$ref/@refid"/></xsl:message>
                             </xsl:if>
                             <xsl:sequence select="$result"/>
-                          </xsl:function>
+                          </xsl:template>
 
-                                  <xsl:template mode="find-target-element" match="compound | member">
+                                  <xsl:template mode="find-actual-target-element" match="compound | member">
                                     <xsl:sequence select="."/>
                                   </xsl:template>
 
                                   <!-- In the index XML, enumvalue "members" immediately follow the corresponding enum member -->
-                                  <xsl:template mode="find-target-element" match="member[@kind eq 'enumvalue']">
-                                    <xsl:sequence select="preceding-sibling::member[@kind eq 'enum'][1]"/>
+                                  <xsl:template mode="find-actual-target-element" match="member[@kind eq 'enumvalue']">
+                                    <xsl:sequence select="d:enum-member(.)"/>
+                                  </xsl:template>
+
+                                          <xsl:function name="d:enum-member">
+                                            <xsl:param name="member"/>
+                                            <xsl:sequence select="$member/preceding-sibling::member[@kind eq 'enum'][1]"/>
+                                          </xsl:function>
+
+                                  <!-- Doxygen sometimes confuses refids of like values of enums in the same namespace;
+                                       based on a narrow heuristic, find the target it should have assigned instead -->
+                                  <xsl:template mode="find-actual-target-element"
+                                                match="member[@kind eq 'enumvalue']
+                                                             [count(../member[@kind eq 'enumvalue']/name[. eq current()/name]) gt 1]"
+                                                priority="1">
+                                    <xsl:param name="ref" tunnel="yes"/>
+                                    <xsl:variable name="prefix-in-link-text" select="d:extract-ns-without-suffix($ref)"/>
+                                    <xsl:choose>
+                                      <xsl:when test="not($prefix-in-link-text)">
+                                        <!-- If there's no namespace in the link text, trust the refid that Doxygen assigned -->
+                                        <xsl:next-match/>
+                                      </xsl:when>
+                                      <xsl:otherwise>
+                                        <!-- Otherwise, see if a different target is a better match -->
+                                        <xsl:variable name="repeated-enum-values"
+                                                      select="../member[@kind eq 'enumvalue'][name eq current()/name]"/>
+                                        <xsl:variable name="candidate-enums"
+                                                      select="$repeated-enum-values/d:enum-member(.)"/>
+                                        <xsl:variable name="matching-enums"
+                                                      select="$candidate-enums[name eq $prefix-in-link-text]"/>
+                                        <xsl:choose>
+                                          <xsl:when test="count($matching-enums) eq 1">
+                                            <!-- If we found exactly one match, use it instead of what Doxygen said -->
+                                            <xsl:sequence select="$matching-enums"/>
+                                          </xsl:when>
+                                          <xsl:otherwise>
+                                            <!-- Otherwise, don't second-guess the refid Doxygen assigned -->
+                                            <xsl:next-match/>
+                                          </xsl:otherwise>
+                                        </xsl:choose>
+                                      </xsl:otherwise>
+                                    </xsl:choose>
                                   </xsl:template>
 
 </xsl:stylesheet>
