@@ -238,26 +238,31 @@
   <xsl:template mode="section-heading" match="parameterlist[@kind eq 'templateparam']">Template Parameters</xsl:template>
   <xsl:template mode="section-heading" match="parameterlist                          ">Parameters</xsl:template>
 
-  <xsl:template mode="section-heading" match="innerclass
-                                            | sectiondef[@kind eq 'public-type']">Types</xsl:template>
-  <xsl:template mode="section-heading" match="sectiondef[@kind eq 'friend'     ]">Friends</xsl:template>
-  <xsl:template mode="section-heading" match="sectiondef[@kind eq 'related'    ]">Related Functions</xsl:template>
+  <xsl:template mode="section-heading" match="innerclass">Types</xsl:template>
 
-  <xsl:template mode="section-heading" match="sectiondef[@kind eq 'enum']">Values</xsl:template>
+  <xsl:template mode="section-heading" match="sectiondef[@kind eq 'friend' ]">Friends</xsl:template>
+  <xsl:template mode="section-heading" match="sectiondef[@kind eq 'related']">Related Functions</xsl:template>
+  <xsl:template mode="section-heading" match="sectiondef[@kind eq 'enum'   ]">Values</xsl:template>
 
   <xsl:template mode="section-heading" match="sectiondef">
-    <xsl:apply-templates mode="access-level" select="@kind"/>
-    <xsl:apply-templates mode="member-kind" select="@kind"/>
+    <xsl:apply-templates mode="access-level"  select="@kind"/>
+    <xsl:apply-templates mode="storage-class" select="@kind"/>
+    <xsl:apply-templates mode="member-kind"  select="@kind"/>
   </xsl:template>
 
-          <xsl:template mode="access-level" match="@kind[starts-with(.,'public'   )]"/>
-          <xsl:template mode="access-level" match="@kind[starts-with(.,'protected')]">Protected </xsl:template>
-          <xsl:template mode="access-level" match="@kind[starts-with(.,'private'  )]">Private </xsl:template>
+          <xsl:template mode="access-level" match="@kind[starts-with(.,'public-'   )]"/>
+          <xsl:template mode="access-level" match="@kind[starts-with(.,'protected-')]">Protected </xsl:template>
+          <xsl:template mode="access-level" match="@kind[starts-with(.,'private-'  )]">Private </xsl:template>
 
-          <xsl:template mode="member-kind" match="@kind[contains(.,'-static-')]" priority="1"
-                                                                               >Static Members</xsl:template>
-          <xsl:template mode="member-kind" match="@kind[ends-with(.,'func'  )]">Member Functions</xsl:template>
-          <xsl:template mode="member-kind" match="@kind[ends-with(.,'attrib')]">Data Members</xsl:template>
+          <xsl:template mode="storage-class" match="@*"/>
+          <xsl:template mode="storage-class" match="@kind[contains(.,'-static-')]">Static </xsl:template>
+
+          <xsl:template mode="member-kind" priority="1"
+                                           match="@kind[ends-with(.,'-static-attrib')]">Members</xsl:template>
+          <xsl:template mode="member-kind" match="@kind[ends-with(.,'-attrib'       )]">Data Members</xsl:template>
+          <xsl:template mode="member-kind" match="@kind[ends-with(.,'-func'         )]">Member Functions</xsl:template>
+          <xsl:template mode="member-kind" match="@kind[ends-with(.,'-type'         )]">Types</xsl:template>
+
 
   <xsl:template mode="section-body" match="sectiondef | innerclass | parameterlist">
     <table>
