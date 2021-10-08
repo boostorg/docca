@@ -212,6 +212,9 @@
   <!-- TODO: Should this be a custom rule or built-in? -->
   <xsl:template mode="section" match="simplesect[matches(title,'Concepts:?')]"/>
 
+  <!-- Omit description section if it has no body -->
+  <xsl:template mode="section" match="detaileddescription[not(normalize-space(.))]"/>
+
   <xsl:template mode="section" match="*">
     <section>
       <heading>
