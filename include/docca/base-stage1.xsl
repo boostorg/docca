@@ -493,16 +493,16 @@
     </function>
   </xsl:template>
 
-          <!-- TODO: make sure this is robust and handles all the possible cases well -->
           <xsl:template mode="normalize-params" match="templateparamlist/param/type[not(../declname)]
-                                                                                   [starts-with(.,'class ')]"
+                                                                                   [starts-with(.,'class ') or
+                                                                                    starts-with(.,'typename ')]"
                                                 priority="1">
-            <type>class</type>
-            <declname>{substring-after(.,'class ')}</declname>
+            <type>{substring-before(.,' ')}</type>
+            <declname>{substring-after(.,' ')}</declname>
           </xsl:template>
 
           <xsl:template mode="normalize-params" match="templateparamlist/param/type[not(../declname)]">
-            <ERROR message="param neither has a declname nor a 'class ' prefix in the type"/>
+            <ERROR message="param neither has a declname nor a 'class ' or 'typename ' prefix in the type"/>
           </xsl:template>
 
           <xsl:template mode="normalize-params" match="templateparamlist/param/defname"/>
