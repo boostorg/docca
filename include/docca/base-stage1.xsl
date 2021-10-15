@@ -493,6 +493,7 @@
     </function>
   </xsl:template>
 
+          <!-- Extract <declname> when Doxygen hides it in the <type> -->
           <xsl:template mode="normalize-params" match="templateparamlist/param/type[not(../declname)]
                                                                                    [starts-with(.,'class ') or
                                                                                     starts-with(.,'typename ')]"
@@ -501,7 +502,9 @@
             <declname>{substring-after(.,' ')}</declname>
           </xsl:template>
 
-          <xsl:template mode="normalize-params" match="templateparamlist/param/type[not(../declname)]">
+          <!-- Flag as error if no declname value could be found (unless the type is simply "class") -->
+          <xsl:template mode="normalize-params" match="templateparamlist/param/type[not(../declname)]
+                                                                                   [not(. = 'class')]">
             <ERROR message="param neither has a declname nor a 'class ' or 'typename ' prefix in the type"/>
           </xsl:template>
 
