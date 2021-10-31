@@ -20,9 +20,10 @@
 
   <xsl:output method="text"/>
 
-  <xsl:include href="emphasized-types.xsl"/>
-
   <xsl:param name="DEBUG" select="false()"/>
+
+  <!-- Can be overridden in library-specific configuration -->
+  <xsl:variable name="emphasized-template-parameter-types" select="()"/>
 
   <xsl:variable name="list-indent-width" select="4"/>
 

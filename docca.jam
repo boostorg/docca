@@ -80,7 +80,6 @@ rule reference ( target : sources * : requirements * : default-build *
     local src-dir = $(.here)/include/docca ;
     copy-xsl $(src-dir)/common.xsl             $(project) $(target-dir) ;
     copy-xsl $(src-dir)/base-config.xsl        $(project) $(target-dir) ;
-    copy-xsl $(src-dir)/emphasized-types.xsl   $(project) $(target-dir) ;
     copy-xsl $(src-dir)/assemble-quickbook.xsl $(project) $(target-dir) ;
 
     copy-xsl $(src-dir)/base-extract-xml-pages.xsl $(project) $(target-dir)
@@ -105,7 +104,6 @@ rule reference ( target : sources * : requirements * : default-build *
 
     copy-xsl $(src-dir)/base-stage2.xsl $(project) $(target-dir)
         : common.xsl
-          emphasized-types.xsl
         ;
 
     copy-xsl $(src-dir)/stage2.xsl $(project) $(target-dir)
