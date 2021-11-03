@@ -54,23 +54,23 @@
   <xsl:variable name="additional-id-replacements" as="element(replace)*" select="()"/>
 
   <xsl:variable name="base-id-replacements" as="element(replace)+">
-    <replace pattern="::" with="__"/>
-    <replace pattern="="  with="_eq_"/>
-    <replace pattern="!"  with="_not_"/>
-    <replace pattern="->" with="_arrow_"/>
+    <replace pattern="::"   with="__"/>
+    <replace pattern="="    with="_eq_"/>
+    <replace pattern="!"    with="_not_"/>
+    <replace pattern="->"   with="_arrow_"/>
     <replace pattern="&lt;" with="_lt_"/>
     <replace pattern=">"    with="_gt_"/>
-    <replace pattern="^~" with="_dtor_"/>  <!-- destructor -->
-    <replace pattern="~" with="_"/>
-    <replace pattern="\[" with="_lb_"/>
-    <replace pattern="\]" with="_rb_"/>
-    <replace pattern="\(" with="_lp_"/>
-    <replace pattern="\)" with="_rp_"/>
-    <replace pattern="\+" with="_plus_"/>
-    <replace pattern="-" with="_minus_"/>
-    <replace pattern="\*" with="_star_"/>
-    <replace pattern="/" with="_slash_"/>
-    <replace pattern=" " with="_"/>
+    <replace pattern="~$"   with="_bnot_"/>  <!-- bitwise NOT -->
+    <replace pattern="~"    with="_dtor_"/>  <!-- destructor -->
+    <replace pattern="\["   with="_lb_"/>
+    <replace pattern="\]"   with="_rb_"/>
+    <replace pattern="\("   with="_lp_"/>
+    <replace pattern="\)"   with="_rp_"/>
+    <replace pattern="\+"   with="_plus_"/>
+    <replace pattern="-"    with="_minus_"/>
+    <replace pattern="\*"   with="_star_"/>
+    <replace pattern="/"    with="_slash_"/>
+    <replace pattern=" "    with="_"/>
   </xsl:variable>
 
   <xsl:function name="d:cleanup-param">
