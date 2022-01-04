@@ -93,9 +93,16 @@
   <xsl:template mode="after"  match="typedef/name"> = </xsl:template>
   <xsl:template mode="after"  match="typedef/type">;</xsl:template>
 
-  <xsl:template match="type[. eq '__implementation_defined__'    ]">``['implementation-defined]``</xsl:template>
-  <xsl:template match="type[. eq '__see_below__'                 ]">``['see-below]``</xsl:template>
-  <xsl:template match="type[. = ('__deduced__','void_or_deduced')]">``__deduced__``</xsl:template>
+  <xsl:template match="type[string(.)]">
+    <xsl:sequence select="d:perform-replacements(., $qb-type-replacements)"/>
+  </xsl:template>
+
+  <xsl:variable name="qb-type-replacements" as="element(replace)*">
+    <replace pattern="__implementation_defined__" with="``['implementation-defined]``"/>
+    <replace pattern="__see_below__"              with="``['see-below]``"/>
+    <replace pattern="__deduced__"                with="``__deduced__``"/>
+    <replace pattern="void_or_deduced"            with="``__deduced__``"/>
+  </xsl:variable>
 
   <xsl:template mode="before" match="variable/name | variable/initializer">{' '}</xsl:template>
   <xsl:template mode="append" match="variable">;</xsl:template>
