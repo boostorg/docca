@@ -215,18 +215,18 @@
   <!-- Omit description section if it has no body -->
   <xsl:template mode="section" match="detaileddescription[not(normalize-space(.))]" priority="2"/>
 
-  <!-- Omit the "Description" heading (only show the body) if it has nothing but a parameterlist -->
-  <xsl:template mode="section" match="detaileddescription[not(normalize-space(d:strip-parameterlist(.)))]" priority="1">
+  <!-- Omit the "Description" heading (only show the body) if it has nothing but a parameterlist or simplesect -->
+  <xsl:template mode="section" match="detaileddescription[not(normalize-space(d:strip-sections(.)))]" priority="1">
     <xsl:apply-templates mode="section-body" select="."/>
   </xsl:template>
 
-          <xsl:function name="d:strip-parameterlist" as="element(detaileddescription)">
+          <xsl:function name="d:strip-sections" as="element(detaileddescription)">
             <xsl:param name="desc" as="element(detaileddescription)"/>
-            <xsl:apply-templates mode="strip-parameterlist" select="$desc"/>
+            <xsl:apply-templates mode="strip-sections" select="$desc"/>
           </xsl:function>
 
-                  <xsl:template mode="strip-parameterlist" match="parameterlist"/>
-                  <xsl:template mode="strip-parameterlist" match="@* | node()">
+                  <xsl:template mode="strip-sections" match="parameterlist | simplesect"/>
+                  <xsl:template mode="strip-sections" match="@* | node()">
                     <xsl:copy>
                       <xsl:apply-templates mode="#current" select="@* | node()"/>
                     </xsl:copy>
