@@ -184,6 +184,7 @@
                 <xsl:apply-templates select="param"/>
               </params>
               <xsl:apply-templates mode="modifier" select="@const[. eq 'yes']"/>
+              <xsl:apply-templates mode="suffix" select="argsstring"/>
             </overloaded-member>
           </xsl:template>
 
@@ -192,6 +193,11 @@
                   </xsl:template>
                   <xsl:template mode="modifier" match="@virt">
                     <modifier>virtual</modifier>
+                  </xsl:template>
+
+                  <xsl:template mode="suffix" match="argsstring"/>
+                  <xsl:template mode="suffix" match="argsstring[ends-with(., '=delete')]">
+                    <suffix> = delete</suffix>
                   </xsl:template>
 
 
@@ -507,6 +513,7 @@
         <xsl:apply-templates select="param"/>
       </params>
       <xsl:apply-templates mode="modifier" select="@const[. eq 'yes']"/>
+      <xsl:apply-templates mode="suffix" select="argsstring"/>
     </function>
   </xsl:template>
 
