@@ -351,7 +351,10 @@
       <xsl:apply-templates mode="member-nodes" select="."/>
     </xsl:variable>
     <xsl:for-each-group select="$member-nodes" group-by="d:member-name(.)">
-      <xsl:sort select="current-grouping-key()"/>
+      <!-- Sort by member name, but don't change the relative order of a list of operators -->
+      <xsl:sort select="if (matches(current-grouping-key(), '^operator..?$'))
+                        then 'operator'
+                        else current-grouping-key()"/>
       <xsl:apply-templates mode="member-row" select="."/>
     </xsl:for-each-group>
   </xsl:template>
