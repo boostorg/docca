@@ -223,7 +223,8 @@
 
   <xsl:template match="linebreak">{$nl}{$nl}</xsl:template>
 
-  <xsl:template match="br">[br]</xsl:template>
+  <!-- Using escaped markup instead of [br] to circumvent Quickbook warnings -->
+  <xsl:template match="br">'''&lt;sbr/>'''</xsl:template>
 
   <xsl:template mode="before" match="programlisting">{$nl}```{$nl}</xsl:template>
   <xsl:template mode="after"  match="programlisting"     >```{$nl}</xsl:template>
