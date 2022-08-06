@@ -241,8 +241,7 @@
 
   <!-- But don't escape them in these contexts -->
   <xsl:template match="&SYNTAX_BLOCK;//text()
-                     | &CODE_BLOCK;//text()
-                     | programlisting//text()">
+                     | &CODE_BLOCK;//text()">
     <!--
       This implementation (using <xsl:sequence> returning a string, instead of <xsl:value-of>) can
       result in a contiguous sequence of strings, which gets converted to a text node having space
@@ -252,6 +251,13 @@
       strip them out (probably by using <xsl:value-of> for the rules matching text nodes).
     -->
     <xsl:sequence select="string(.)"/>
+  </xsl:template>
+
+  <!-- See comment above about returning a sequence of strings; the same consideration may apply here,
+       as this pattern used to share the same rule above, i.e. with <xsl:sequence select="string(.)"/> -->
+  <xsl:template match="programlisting//text()">
+    <!-- Perform the same Quickbook macro replacements as we do for <type> values -->
+    <xsl:sequence select="d:perform-replacements(string(.), $qb-type-replacements)"/>
   </xsl:template>
 
   <!-- Boilerplate default rules for elements -->
