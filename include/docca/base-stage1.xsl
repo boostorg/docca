@@ -320,16 +320,20 @@
           <xsl:template mode="parameter-row" match="parameteritem">
             <tr>
               <td>
-                <code>
-                  <!-- ASSUMPTION: <parameternamelist> only ever has one <parametername> child -->
-                  <xsl:apply-templates select="parameternamelist/parametername/node()"/>
-                </code>
+                <xsl:apply-templates mode="parameter-name" select="parameternamelist/parametername"/>
               </td>
               <td>
                 <xsl:apply-templates select="parameterdescription/node()"/>
               </td>
             </tr>
           </xsl:template>
+
+                  <xsl:template mode="parameter-name" match="parametername">
+                    <code>
+                      <xsl:apply-templates/>
+                    </code>
+                    <xsl:if test="position() ne last()">, </xsl:if>
+                  </xsl:template>
 
   <xsl:template mode="table-body" match="sectiondef[@kind eq 'enum']">
     <xsl:apply-templates mode="enum-row" select="memberdef/enumvalue"/> <!-- Use input order for enum values -->
