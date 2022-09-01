@@ -553,6 +553,31 @@
 
   <xsl:template match="simplesect/title"/>
 
+  <xsl:template match="table">
+    <table>
+      <xsl:apply-templates select="row"/>
+    </table>
+  </xsl:template>
+
+          <xsl:template match="row">
+            <tr>
+              <xsl:apply-templates select="entry"/>
+            </tr>
+          </xsl:template>
+
+                  <xsl:template match="entry[@thead eq 'yes']">
+                    <th>
+                      <xsl:apply-templates/>
+                    </th>
+                  </xsl:template>
+
+                  <xsl:template match="entry">
+                    <td>
+                      <xsl:apply-templates/>
+                    </td>
+                  </xsl:template>
+
+
   <!-- TODO: verify we don't need this; it was causing duplicate headings in simplesect sections
   <xsl:template match="title">
     <heading>
