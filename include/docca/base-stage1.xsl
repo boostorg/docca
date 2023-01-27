@@ -1,24 +1,28 @@
-<!DOCTYPE xsl:stylesheet [
-<!-- TODO: complete this list -->
-<!ENTITY BLOCK_LEVEL_ELEMENT "programlisting
-                            | itemizedlist
-                            | orderedlist
-                            | parameterlist
-                            | simplesect
-                            | para
-                            | table
-                            | linebreak">
-]>
 <xsl:stylesheet version="3.0"
   xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
   xmlns:xs="http://www.w3.org/2001/XMLSchema"
   xmlns:d="http://github.com/vinniefalco/docca"
-  exclude-result-prefixes="xs d"
+  xmlns:my="http://localhost"
+  exclude-result-prefixes="xs d my"
   expand-text="yes">
 
   <xsl:include href="common.xsl"/>
 
   <xsl:output indent="yes"/>
+
+  <xsl:function name="my:block-level-element-children">
+    <xsl:param name="context"/>
+    <!-- TODO: complete this list -->
+    <xsl:sequence select="$context/( programlisting
+                                   | itemizedlist
+                                   | orderedlist
+                                   | parameterlist
+                                   | simplesect
+                                   | para
+                                   | table
+                                   | linebreak
+                                   )"/>
+  </xsl:function>
 
   <xsl:template match="/doxygen" priority="1">
     <page id="{@d:page-id}" type="{@d:page-type}">
@@ -618,7 +622,7 @@
 
 
   <!-- When a <para> directly contains a mix of inline nodes and block-level elements, normalize its content -->
-  <xsl:template match="para[&BLOCK_LEVEL_ELEMENT;]">
+  <xsl:template match="para[my:block-level-element-children(.)]">
     <para>
       <xsl:for-each-group select="* | text()" group-adjacent="d:is-inline(.)">
         <xsl:apply-templates mode="capture-ranges" select="."/>
@@ -628,7 +632,7 @@
 
           <xsl:function name="d:is-inline">
             <xsl:param name="node"/>
-            <xsl:sequence select="not($node/../(&BLOCK_LEVEL_ELEMENT;)[. is $node])"/>
+            <xsl:sequence select="not($node/../my:block-level-element-children(.)[. is $node])"/>
           </xsl:function>
 
           <!-- Process the block-level elements as usual -->

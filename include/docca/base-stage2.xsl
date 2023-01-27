@@ -1,19 +1,8 @@
-<!DOCTYPE xsl:stylesheet [
-<!ENTITY SYNTAX_BLOCK "*[ self::compound
-                        | self::function
-                        | self::typedef
-                        | self::enum
-                        | self::variable
-                        | self::overloaded-member
-                        ]">
-<!ENTITY CODE_BLOCK "*[ self::computeroutput[not(ref)]
-                      | self::code
-                      ]">
-]>
 <xsl:stylesheet version="3.0"
   xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
   xmlns:xs="http://www.w3.org/2001/XMLSchema"
   xmlns:d="http://github.com/vinniefalco/docca"
+  xmlns:my="http://localhost"
   expand-text="yes">
 
   <xsl:import href="common.xsl"/>
@@ -26,6 +15,24 @@
   <xsl:variable name="emphasized-template-parameter-types" select="()"/>
 
   <xsl:variable name="list-indent-width" select="4"/>
+
+  <xsl:function name="my:is-syntax-block">
+    <xsl:param name="element" as="element()"/>
+    <xsl:sequence select="exists($element/( self::compound
+                                          | self::function
+                                          | self::typedef
+                                          | self::enum
+                                          | self::variable
+                                          | self::overloaded-member
+                                          ))"/>
+  </xsl:function>
+
+  <xsl:function name="my:is-code-block">
+    <xsl:param name="element" as="element()"/>
+    <xsl:sequence select="exists($element/( self::computeroutput[not(ref)]
+                                          | self::code
+                                          ))"/>
+  </xsl:function>
 
   <xsl:template mode="before" match="/page">
     <xsl:text>{$nl}</xsl:text>
@@ -56,8 +63,8 @@
     <xsl:apply-templates mode="includes-template-footer" select="."/>
   </xsl:template>
 
-  <xsl:template mode="before" match="&SYNTAX_BLOCK;">{$nl}```{$nl}</xsl:template>
-  <xsl:template mode="after"  match="&SYNTAX_BLOCK;">{$nl}```{$nl}</xsl:template>
+  <xsl:template mode="before" match="*[my:is-syntax-block(.)]">{$nl}```{$nl}</xsl:template>
+  <xsl:template mode="after"  match="*[my:is-syntax-block(.)]">{$nl}```{$nl}</xsl:template>
 
   <!-- Merge adjacent overloaded-members into one syntax block, separated by one blank line -->
   <xsl:template mode="after"  match="overloaded-member[following-sibling::*[1]/self::overloaded-member]" priority="1"/>
@@ -80,12 +87,12 @@
   </xsl:template>
 
   <xsl:template priority="1"
-                match="&SYNTAX_BLOCK;//ref">``[link {$doc-ref}.{@d:refid} {d:qb-escape(.)}]``</xsl:template>
-  <xsl:template match="td[1]//ref"           >[link {$doc-ref}.{@d:refid} {d:qb-escape(.)}]</xsl:template>
-  <xsl:template match="ref"                  >[link {$doc-ref}.{@d:refid} `{.}`]</xsl:template>
+                match="*[my:is-syntax-block(.)]//ref">``[link {$doc-ref}.{@d:refid} {d:qb-escape(.)}]``</xsl:template>
+  <xsl:template match="td[1]//ref"                     >[link {$doc-ref}.{@d:refid} {d:qb-escape(.)}]</xsl:template>
+  <xsl:template match="ref"                            >[link {$doc-ref}.{@d:refid} `{.}`]</xsl:template>
 
-  <xsl:template mode="before" match="&CODE_BLOCK;">`</xsl:template>
-  <xsl:template mode="after"  match="&CODE_BLOCK;">`</xsl:template>
+  <xsl:template mode="before" match="*[my:is-code-block(.)]">`</xsl:template>
+  <xsl:template mode="after"  match="*[my:is-code-block(.)]">`</xsl:template>
 
   <xsl:template mode="before" match="enum/name">enum </xsl:template>
 
@@ -240,8 +247,8 @@
   </xsl:template>
 
   <!-- But don't escape them in these contexts -->
-  <xsl:template match="&SYNTAX_BLOCK;//text()
-                     | &CODE_BLOCK;//text()">
+  <xsl:template match="*[my:is-syntax-block(.)]//text()
+                     | *[my:is-code-block(.)]//text()">
     <!--
       This implementation (using <xsl:sequence> returning a string, instead of <xsl:value-of>) can
       result in a contiguous sequence of strings, which gets converted to a text node having space
