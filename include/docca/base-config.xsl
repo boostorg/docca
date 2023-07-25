@@ -41,7 +41,7 @@
 
   <xsl:function name="d:should-ignore-friend">
     <xsl:param name="element" as="element(memberdef)"/>
-    <xsl:sequence select="contains($element, '_helper')"/>
+    <xsl:sequence select="not($element/@d:prot eq 'public') or contains($element, '_helper')"/>
   </xsl:function>
 
 </xsl:stylesheet>

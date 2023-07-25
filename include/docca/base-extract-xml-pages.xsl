@@ -189,6 +189,7 @@
                   <!-- Insert a reference to each child member's page ID -->
                   <xsl:template mode="compound-page-insert" match="memberdef">
                     <xsl:attribute name="d:page-refid" select="d:make-id(/doxygen/compounddef/compoundname||'.'||name)"/>
+                    <xsl:attribute name="d:prot" select="@prot"/>
                   </xsl:template>
 
                   <!-- Alternative implementation in case we need to start controlling whitespace more
