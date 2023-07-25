@@ -89,6 +89,10 @@
   <xsl:template priority="1"
                 match="*[my:is-syntax-block(.)]//ref">``[link {$doc-ref}.{@d:refid} {d:qb-escape(.)}]``</xsl:template>
   <xsl:template match="td[1]//ref"                     >[link {$doc-ref}.{@d:refid} {d:qb-escape(.)}]</xsl:template>
+  <!--
+  <xsl:template match="codeline//ref"                  >[link {$doc-ref}.{@d:refid} {d:qb-escape(.)}]</xsl:template>
+  -->
+  <xsl:template match="codeline//ref"                  >{.}</xsl:template>
   <xsl:template match="ref"                            >[link {$doc-ref}.{@d:refid} `{.}`]</xsl:template>
 
   <xsl:template mode="before" match="*[my:is-code-block(.)]">`</xsl:template>
