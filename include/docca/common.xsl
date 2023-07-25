@@ -48,29 +48,47 @@
                           else $name"/>
   </xsl:function>
 
-  <xsl:variable name="id-replacements" select="$additional-id-replacements, $base-id-replacements"/>
+  <xsl:variable name="id-replacements" select="$compatibility-id-replacements, $additional-id-replacements, $base-id-replacements"/>
+
+  <xsl:variable name="identifier-continue" select="'A-Za-z0-9_'"/>
+
+  <!-- in doxygen versions 1.8.15 and older, operators beginning with
+  any character other than "+", "|", "(", "=", "/", or &lt; have a space between
+  "operator" and the following characters. this space is not present in newer versions,
+  so we must adjust the names for backwards compatibility -->
+  <xsl:variable name="operator-start-space" select="'&gt;~!-%&amp;\-\*\^\)\[\]'"/>
+  <xsl:variable name="operator-start-no-space" select="'\+\|\(/=,&lt;'"/>
+
+  <xsl:variable name="compatibility-id-replacements" as="element(replace)+">
+    <replace pattern="(^|[^{$identifier-continue}])operator ?([{$operator-start-space}][{$operator-start-space}{$operator-start-no-space}]*)"    with="$1operator_$2"/>
+  </xsl:variable>
 
   <!-- Can be overridden by a customizing stylesheet -->
   <xsl:variable name="additional-id-replacements" as="element(replace)*" select="()"/>
 
   <xsl:variable name="base-id-replacements" as="element(replace)+">
-    <replace pattern="::"   with="__"/>
-    <replace pattern="="    with="_eq_"/>
-    <replace pattern="!"    with="_not_"/>
-    <replace pattern="->"   with="_arrow_"/>
-    <replace pattern="&lt;" with="_lt_"/>
-    <replace pattern=">"    with="_gt_"/>
-    <replace pattern="~$"   with="_bnot_"/>  <!-- bitwise NOT -->
-    <replace pattern="~"    with="_dtor_"/>  <!-- destructor -->
-    <replace pattern="\["   with="_lb_"/>
-    <replace pattern="\]"   with="_rb_"/>
-    <replace pattern="\("   with="_lp_"/>
-    <replace pattern="\)"   with="_rp_"/>
-    <replace pattern="\+"   with="_plus_"/>
-    <replace pattern="-"    with="_minus_"/>
-    <replace pattern="\*"   with="_star_"/>
-    <replace pattern="/"    with="_slash_"/>
-    <replace pattern=" "    with="_"/>
+    <replace pattern="::"    with="__"/>
+    <replace pattern="="     with="_eq_"/>
+    <replace pattern="!"     with="_not_"/>
+    <replace pattern="-&gt;" with="_arrow_"/>
+    <replace pattern="&lt;"  with="_lt_"/>
+    <replace pattern="&gt;"  with="_gt_"/>
+    <replace pattern="~$"    with="_bnot_"/>  <!-- bitwise NOT -->
+    <replace pattern="~"     with="_dtor_"/>  <!-- destructor -->
+    <replace pattern="\["    with="_lb_"/>
+    <replace pattern="\]"    with="_rb_"/>
+    <replace pattern="\("    with="_lp_"/>
+    <replace pattern="\)"    with="_rp_"/>
+    <replace pattern="\+"    with="_plus_"/>
+    <replace pattern="-"     with="_minus_"/>
+    <replace pattern="\*"    with="_star_"/>
+    <replace pattern="/"     with="_slash_"/>
+    <replace pattern="%"     with="_mod_"/>
+    <replace pattern=","     with="_comma_"/>
+    <replace pattern="&amp;" with="_and_"/>
+    <replace pattern="\|"    with="_or_"/>
+    <replace pattern="\^"    with="_xor_"/>
+    <replace pattern=" "     with="_"/>
   </xsl:variable>
 
   <xsl:function name="d:cleanup-param">
