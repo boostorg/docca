@@ -913,7 +913,7 @@ def parse_args(args):
     return parser.parse_args(args[1:])
 
 def get_config(file_name):
-    with open(file_name, 'r') as file:
+    with open(file_name, 'r', encoding='utf-8') as file:
         return json.load(file)
 
 def collect_compound_refs(file):
@@ -936,7 +936,7 @@ def collect_data(parent_dir, refs):
     result = dict()
     for refid in refs:
         file_name = os.path.join(parent_dir, refid) + '.xml'
-        with open(file_name, 'r') as file:
+        with open(file_name, 'r', encoding='utf-8') as file:
             tree = ET.parse(file)
             root = tree.getroot()
             assert len(root) == 1
@@ -1021,7 +1021,7 @@ def main(args, stdin, stdout, includes):
     data_dir = args.directory
 
     if args.input:
-        file = open(args.input, 'r')
+        file = open(args.input, 'r', encoding='utf-8')
         ctx = file
         data_dir = data_dir or os.path.dirname(args.input)
     else:
@@ -1040,7 +1040,7 @@ def main(args, stdin, stdout, includes):
         config.update(get_config(file_name))
 
     if args.output:
-        file = open(args.output, 'w')
+        file = open(args.output, 'w', encoding='utf-8')
         ctx = file
     else:
         file = stdout
