@@ -967,7 +967,6 @@ def construct_environment(includes, config):
         autoescape=False,
         undefined=jinja2.StrictUndefined,
         extensions=[
-            'jinja2.ext.debug',
             'jinja2.ext.do',
             'jinja2.ext.loopcontrols',
         ],
