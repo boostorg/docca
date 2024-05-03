@@ -595,7 +595,7 @@ static
         if Config.default_namespace
         else ''
     -%}
-    {{ escape( entity.fully_qualified_name[prefix | length] ) }}
+    {{ escape( entity.fully_qualified_name[prefix | length:] ) }}
 {%- endmacro %}
 
 
