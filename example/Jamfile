@@ -59,7 +59,7 @@ docca.reference reference.qbk
 # Produce the reference.qbk from C++ sources (Python implementation)
 docca.pyreference reference2.qbk
     : [ glob-tree-ex include/docca : *.hpp ]
-      <doxygen:param>ABBREVIATE_BRIEF=
+    : <doxygen:param>ABBREVIATE_BRIEF=
       <doxygen:param>INLINE_INHERITED_MEMB=YES
       <doxygen:param>JAVADOC_AUTOBRIEF=YES
       <doxygen:param>MULTILINE_CPP_IS_BRIEF=YES
@@ -79,6 +79,8 @@ docca.pyreference reference2.qbk
       <docca:config>config.json
     ;
 
+explicit reference.qbk reference2.qbk ;
+
 #-------------------------------------------------------------------------------
 #
 # Produce the Boost.Book XML from the QuickBook
@@ -94,11 +96,9 @@ install images
 explicit images ;
 
 xml json_doc
-    :
-        main.qbk
-    :
-        <use>reference.qbk
-        <dependency>images
+    : main.qbk
+    : <dependency>reference.qbk
+      <dependency>images
     ;
 
 explicit json_doc ;
