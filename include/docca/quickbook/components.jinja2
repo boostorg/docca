@@ -1,3 +1,12 @@
+{#
+Copyright (c) 2024 Dmitry Arkhipov (grisumbras@yandex.ru)
+
+Distributed under the Boost Software License, Version 1.0. (See accompanying
+file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+
+Official repository: https://github.com/boostorg/json
+#}
+
 {% macro write_entity(entity) -%}
     {% if entity.access != Access.private or Config.include_private -%}
         {%- if entity is Namespace -%}
@@ -664,6 +673,18 @@ static
 {%- endmacro %}
 
 
+{% macro table(part) -%}
+[table {% if part.caption %}{{ part.caption }}{% endif %}
+{%- for row in part %}
+  [{% for cell in row %}
+    [ {{ description(cell, nesting='      ') }}    ]
+  {%- endfor %}
+  ]
+  {%- endfor %}
+]
+{% endmacro %}
+
+
 {%- macro itemised(lst, nesting='') -%}
 {%- for item in lst -%}
 {{ nesting }}
@@ -690,6 +711,8 @@ static
 {{ nesting }}```
 {% elif part is ParameterList -%}
 {{ parameter_list(part) }}
+{% elif part is Table -%}
+{{ table(part) }}
 {%- else -%}
 {{ part.unhandled_type() }}
 {%- endif -%}

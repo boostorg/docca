@@ -1,5 +1,14 @@
 #!/usr/bin/env python
 
+#
+# Copyright (c) 2024 Dmitry Arkhipov (grisumbras@yandex.ru)
+#
+# Distributed under the Boost Software License, Version 1.0. (See accompanying
+# file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+#
+# Official repository: https://github.com/boostorg/json
+#
+
 import argparse
 import contextlib
 import jinja2
@@ -202,10 +211,44 @@ class CodeBlock(Block):
     def __len__(self):
         return len(self._lines)
 
+class Table(Block):
+    def __init__(self, cols, rows, caption=None, width=None):
+        self.cols = cols
+        self.width = width
+        self.caption = caption
+        self._rows = rows
+
+    def __getitem__(self, pos):
+        return self._rows[pos]
+
+    def __len__(self):
+        return len(self._rows)
+
+class Cell(Block):
+    def __init__(
+        self, blocks,
+        col_span=1, row_span=1, is_header=False, horizontal_align=None,
+        vertical_align=None, width=None, role=None
+    ):
+        self._blocks = blocks
+
+        self.col_span = col_span or 1
+        self.row_span = row_span or 1
+        self.is_header = is_header or False
+        self.horizontal_align = horizontal_align
+        self.vertical_align = vertical_align
+        self.width = width
+        self.role = role
+
+    def __getitem__(self, pos):
+        return self._blocks[pos]
+
+    def __len__(self):
+        return len(self._blocks)
 
 class Entity():
     access = Access.public
-    _table = {
+    _chartable = {
         ord('\r'): None,
         ord('\n'): None,
     }
@@ -314,6 +357,7 @@ class Entity():
                 'simplesect': self._section,
                 'programlisting': self._codeblock,
                 'parameterlist': self._parameters,
+                'table': self._table,
             }.get(child.tag)
             if func:
                 cur_para = finish_paragraph(cur_para)
@@ -402,11 +446,38 @@ class Entity():
 
         return CodeBlock(lines)
 
+    def _table(self, element):
+        cols = element.get('cols')
+
+        caption = None
+        if len(element) and element[0].tag == 'caption':
+            caption = self._phrase_content(element[0])
+            caption = Paragraph(caption or [])
+
+        rows = []
+        for row in element[(1 if caption else 0):]:
+            assert row.tag == 'row'
+            cells = []
+            for cell in row:
+                cells.append(Cell(
+                    self._block(cell),
+                    col_span=cell.get('colspan'),
+                    row_span=cell.get('rowspan'),
+                    is_header=cell.get('thead'),
+                    horizontal_align=cell.get('align'),
+                    vertical_align=cell.get('valign'),
+                    width=cell.get('width'),
+                    role=cell.get('class'),
+                ))
+            rows.append(cells)
+
+        return Table(cols, rows, caption)
 
     def _phrase(self, element, allow_missing_refs=False):
         func = {
             'bold': self._strong,
             'computeroutput': self._monospaced,
+            'verbatim': self._monospaced,
             'emphasis': self._emphasised,
             'ref': self.entity_reference,
             'ulink': self._url_link,
@@ -428,7 +499,7 @@ class Entity():
         return result
 
     def _remove_endlines(self, s):
-        return s.translate(self._table)
+        return s.translate(self._chartable)
 
     def _strong(self, element, allow_missing_refs=False):
         return Strong(
@@ -1009,6 +1080,8 @@ def construct_environment(includes, config):
     env.tests['ListItem'] = lambda x: isinstance(x, ListItem)
     env.tests['Section'] = lambda x: isinstance(x, Section)
     env.tests['CodeBlock'] = lambda x: isinstance(x, CodeBlock)
+    env.tests['Table'] = lambda x: isinstance(x, Table)
+    env.tests['Cell'] = lambda x: isinstance(x, Cell)
     env.tests['ParameterList'] = lambda x: isinstance(x, ParameterList)
     env.tests['ParameterDescription'] = lambda x: isinstance(x, ParameterDescription)
     env.tests['ParameterItem'] = lambda x: isinstance(x, ParameterItem)
