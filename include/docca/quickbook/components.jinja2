@@ -348,10 +348,10 @@ Official repository: https://github.com/boostorg/json
 {{ description(entity.brief) }}
 
 {{ heading('Synopsis') }}
-{% if entity.header
+{% if entity.location
     and (entity.scope is Namespace
         or (entity is Function and entity.is_friend)) -%}
-    Defined in header {{ source_header(entity.header) }}
+    Defined in header {{ source_header(entity.location.file) }}
 {%- endif %}
 
 ```
@@ -369,8 +369,8 @@ Official repository: https://github.com/boostorg/json
 {{ description(entity.description) }}
 {%- endif %}
 
-{% if Config.convenience_header
-    and entity.header
+{% if Config.get('convenience_header')
+    and entity.location
     and (entity.scope is Namespace
         or (entity is Function and entity.is_friend)) -%}
 Convenience header {{ source_header(Config.convenience_header) }}
@@ -378,37 +378,6 @@ Convenience header {{ source_header(Config.convenience_header) }}
 {{ caller("members") }}
 [endsect]
 {% endmacro %}
-
-
-{% macro source_header(path) -%}
-[include_file {{ path }}]
-{%- endmacro %}
-
-
-{% macro template_parameters(entity) -%}
-{%- if entity.template_parameters or entity.is_specialization -%}template<{%- endif -%}
-{%- for tparam in entity.template_parameters %}
-    {{ phrase(tparam.type, in_code=True) }}
-    {%- if tparam.array %} (&{% endif -%}
-    {%- if tparam.name -%}
-        {%- if not tparam.array %} {% endif -%}
-        {{ tparam.name }}
-    {%- endif -%}
-    {%- if tparam.array %}) {{ tparam.array }}{% endif -%}
-    {%- if tparam.default_value %} = {{ phrase(tparam.default_value, in_code=True) }}{% endif -%}
-
-{%- if loop.last -%}
->
-{% else -%}
-,
-{%- endif -%}
-
-{%- else -%}
-{%- if entity.is_specialization -%}
->
-{% endif -%}
-{%- endfor %}
-{%- endmacro %}
 
 
 {% macro function_declaration(entity, linked=False) -%}
@@ -442,9 +411,6 @@ explicit
     {%- if not loop.last %},{% endif -%}
 {%- endfor -%}
 )
-{%- if entity.is_deleted %} = delete
-{%- elif entity.is_defaulted %} = default
-{%- endif -%}
 {%- if entity.refqual or entity.is_const -%}
     {{ " " }}
     {%- if entity.is_const %}const{% endif -%}
@@ -454,6 +420,9 @@ explicit
 {%- endif -%}
 {%- if entity.is_noexcept and not entity.is_destructor %} noexcept{% endif -%}
 {%- if not entity.is_noexcept and entity.is_destructor %} noexcept(false){% endif -%}
+{%- if entity.is_deleted %} = delete
+{%- elif entity.is_defaulted %} = default
+{%- endif -%}
 ;
 {%- endmacro %}
 
@@ -472,7 +441,7 @@ static
     {% if loop.first %}:{% else %},{% endif -%}
     {{ ' ' ~ entry.access ~ ' ' }}
     {%- if entry.is_virtual %}virtual {% endif -%}
-    {{ phrase(entry.base, in_code=True) }}
+    {{ phrase_part(entry.base, in_code=True) }}
 {%- endfor -%}
 {%- endif -%}
 {%- if entity is Enum and entity.underlying_type %}
@@ -481,6 +450,37 @@ static
 {%- if entity is TypeAlias %} = {{ phrase(entity.aliased, in_code=True) }}{% endif -%}
 {%- if entity is Variable and entity.value %} {{ phrase(entity.value, in_code=True) }}{% endif -%}
 ;
+{%- endmacro %}
+
+
+{% macro source_header(path) -%}
+[include_file {{ path }}]
+{%- endmacro %}
+
+
+{% macro template_parameters(entity) -%}
+{%- if entity.template_parameters or entity.is_specialization -%}template<{%- endif -%}
+{%- for tparam in entity.template_parameters %}
+    {{ phrase(tparam.type, in_code=True) }}
+    {%- if tparam.array %} (&{% endif -%}
+    {%- if tparam.name -%}
+        {%- if not tparam.array %} {% endif -%}
+        {{ tparam.name }}
+    {%- endif -%}
+    {%- if tparam.array %}) {{ phrase(tparam.array, in_code=True) }}{% endif -%}
+    {%- if tparam.default_value %} = {{ phrase(tparam.default_value, in_code=True) }}{% endif -%}
+
+{%- if loop.last -%}
+>
+{% else -%}
+,
+{%- endif -%}
+
+{%- else -%}
+{%- if entity.is_specialization -%}
+>
+{% endif -%}
+{%- endfor %}
 {%- endmacro %}
 
 
@@ -496,7 +496,7 @@ static
     {%- for part in member.brief -%}
         {%- set line = description(part) | trim -%}
         {%- if not loop.changed(line) %}{% continue %}{% endif -%}
-        {%- if not loop.first %} '''<sbr/>'''[role silver —]'''<sbr/>'''
+        {%- if not loop.first %} '''<sbr/>'''[role silver \u2014]'''<sbr/>'''
         {%- endif -%}
         {{ line }}
     {%- endfor %}
@@ -536,78 +536,6 @@ static
 {%- endmacro %}
 
 
-{% macro anchor(entity) -%}
-    {%- if entity is Function and not entity.is_sole_overload -%}
-        overload{{ entity.overload_index + 1 }}
-    {%- elif entity.scope and not entity.scope is Namespace -%}
-        {{ sanitize_path_segment(entity.name) }}
-        {%- if entity is Function and entity.is_friend -%}_fr{%- endif -%}
-    {%- else -%}
-        {%- set sep = joiner("__") -%}
-        {%- for segment in entity.path -%}
-            {{ sep() }}{{ sanitize_path_segment(segment.name) }}
-        {%- endfor -%}
-    {%- endif -%}
-{%- endmacro %}
-
-{% macro link(entity, prefer_overload=False) -%}
-    {%- if entity is Variable and entity.scope is Enum -%}
-        {{ link(entity.scope) }}
-    {%- else -%}
-        {%- if 'link_prefix' in Config %}{{ Config.link_prefix }}{% endif -%}
-
-        {%- set ns = namespace(suffix='', path=entity.path) -%}
-        {%- if entity.scope and entity.scope is not Namespace -%}
-            {%- set ns.suffix = '.' + sanitize_path_segment(ns.path[-1].name) -%}
-            {%- set ns.path = ns.path[:-1] -%}
-        {%- endif -%}
-        {%- if (entity is Function or entity is OverloadSet) and entity.is_friend %}
-            {%- set ns.suffix = ns.suffix + '_fr' -%}
-        {%- endif -%}
-        {%- if entity is Function %}
-            {%- if not prefer_overload and not entity.is_sole_overload %}
-                {%- set ns.suffix = ns.suffix + '.overload{0}'.format(entity.overload_index + 1) -%}
-            {%- endif -%}
-        {%- endif -%}
-
-        {%- set sep = joiner('__') -%}
-        {%- for segment in ns.path -%}
-            {{ sep() }}{{ sanitize_path_segment(segment.name) }}
-        {%- endfor -%}
-
-        {{ ns.suffix }}
-    {%- endif -%}
-{%- endmacro %}
-
-
-{% macro sanitize_path_segment(segment) -%}
-    {{ segment.replace("[", "__lb_")
-              .replace("]", "_rb_")
-              .replace("operator>", "operator__gt_")
-              .replace("->", "__arrow_")
-              .replace("=", "_eq_")
-              .replace("!", "__not_")
-              .replace("+", "_plus_")
-              .replace("-", "_minus_")
-              .replace("*", "__star_")
-              .replace("/", "_slash_")
-              .replace("<", "_lt_")
-              .replace(">", "_gt_")
-              .replace("~", "_dtor_")
-              .replace(":", "_")
-              .replace(" ", "_") }}
-{%- endmacro %}
-
-
-{% macro abridged_fqn(entity) -%}
-    {%- set prefix = Config.default_namespace + '::'
-        if Config.default_namespace
-        else ''
-    -%}
-    {{ escape( entity.fully_qualified_name[prefix | length:] ) }}
-{%- endmacro %}
-
-
 {% macro subsection(sub) -%}
 {%- if sub.title -%}
     [heading {{ phrase(sub.title) }}]
@@ -640,19 +568,19 @@ static
 
 {% macro parameter_list(part) -%}
 {%- set ns = namespace(title="", col="") -%}
-{%- if part.kind == ParameterList.parameters -%}
+{%- if part.kind == ParameterList.Parameters -%}
     {%- set ns.title = "Parameters" -%}
     {%- set ns.col1 = "Name" -%}
     {%- set ns.col2 = "Description" -%}
-{%- elif part.kind == ParameterList.template_parameters -%}
+{%- elif part.kind == ParameterList.TemplateParameters -%}
     {%- set ns.title = "Template Parameters" -%}
     {%- set ns.col1 = "Type" -%}
     {%- set ns.col2 = "Description" -%}
-{%- elif part.kind == ParameterList.exceptions -%}
+{%- elif part.kind == ParameterList.Exceptions -%}
     {%- set ns.title = "Exceptions" -%}
     {%- set ns.col1 = "Type" -%}
     {%- set ns.col2 = "Thrown On" -%}
-{%- elif part.kind == ParameterList.returns -%}
+{%- elif part.kind == ParameterList.ReturnValues -%}
     {%- set ns.title = "Return Values" -%}
     {%- set ns.col1 = "Type" -%}
     {%- set ns.col2 = "Description" -%}
@@ -674,7 +602,7 @@ static
 
 
 {% macro table(part) -%}
-[table {% if part.caption %}{{ part.caption }}{% endif %}
+[table {% if part.caption %}{{ phrase(part.caption) }}{% endif %}
 {%- for row in part %}
   [{% for cell in row %}
     [ {{ description(cell, nesting='      ') }}    ]
@@ -686,11 +614,16 @@ static
 
 
 {%- macro itemised(lst, nesting='') -%}
-{%- for item in lst -%}
-{{ nesting }}
-{%- if lst.is_ordered %}#{% else %}*{% endif %} {{ description(item, nesting + '       ') }}
-{%- endfor -%}
+    {%- for item in lst -%}
+        {{ nesting }}
+        {%- if lst.is_ordered -%}
+            #
+        {%- else -%}
+            *
+        {%- endif %} {{ description(item, nesting + '       ') }}
+    {%- endfor -%}
 {%- endmacro %}
+
 
 {% macro description(parts, nesting='') -%}
 
@@ -743,10 +676,97 @@ static
         {%- endif -%}
     {%- elif part is UrlLink -%}
         [@{{ part.url }} {{ phrase(part, in_code=in_code) }}]
-{%- elif part is Linebreak %}{# indent is intentional here #}
+    {%- elif part is Linebreak %}{# indent is intentional here #}
 
 {% else -%}
         {{ part.unhandled_type() }}
+    {%- endif -%}
+{%- endmacro %}
+
+
+{% macro anchor(entity) -%}
+    {%- if entity is Function and not entity.is_sole_overload -%}
+        overload{{ entity.overload_index + 1 }}
+    {%- elif entity.scope and not entity.scope is Namespace -%}
+        {{ sanitize_path_segment(entity.name) }}
+        {%- if entity is Function and entity.is_friend -%}_fr{%- endif -%}
+    {%- else -%}
+        {%- set sep = joiner("__") -%}
+        {%- for segment in entity.path -%}
+            {{ sep() }}{{ sanitize_path_segment(segment.name) }}
+        {%- endfor -%}
+    {%- endif -%}
+{%- endmacro %}
+
+
+{% macro link(entity, prefer_overload=False) -%}
+    {%- if entity is Enumerator -%}
+        {{ link(entity.enum) }}
+    {%- else -%}
+        {%- if 'link_prefix' in Config %}{{ Config.link_prefix }}{% endif -%}
+
+        {%- set ns = namespace(suffix='', path=entity.path) -%}
+        {%- if entity.scope and entity.scope is not Namespace -%}
+            {%- set ns.suffix = '.' + sanitize_path_segment(ns.path[-1].name) -%}
+            {%- set ns.path = ns.path[:-1] -%}
+        {%- endif -%}
+        {%- if (entity is Function or entity is OverloadSet) and entity.is_friend %}
+            {%- set ns.suffix = ns.suffix + '_fr' -%}
+        {%- endif -%}
+        {%- if entity is Function %}
+            {%- if not prefer_overload and not entity.is_sole_overload %}
+                {%- set ns.suffix = ns.suffix + '.overload{0}'.format(entity.overload_index + 1) -%}
+            {%- endif -%}
+        {%- endif -%}
+
+        {%- set sep = joiner('__') -%}
+        {%- for segment in ns.path -%}
+            {{ sep() }}{{ sanitize_path_segment(segment.name) }}
+        {%- endfor -%}
+
+        {{ ns.suffix }}
+    {%- endif -%}
+{%- endmacro %}
+
+
+{% macro sanitize_path_segment(segment) -%}
+    {{ segment.replace("[", "__lb_")
+              .replace("]", "_rb_")
+              .replace("(", "_lp_")
+              .replace(")", "_rp_")
+              .replace("<=>", "_spshp_")
+              .replace("operator>", "operator__gt_")
+              .replace("operator~", "operator_bnot_")
+              .replace("->", "__arrow_")
+              .replace("=", "_eq_")
+              .replace("!", "__not_")
+              .replace("+", "_plus_")
+              .replace("-", "_minus_")
+              .replace("&", "_and_")
+              .replace("|", "_or_")
+              .replace("^", "_xor_")
+              .replace("*", "__star_")
+              .replace("/", "_slash_")
+              .replace("%", "_mod_")
+              .replace("<", "_lt_")
+              .replace(">", "_gt_")
+              .replace("~", "_dtor_")
+              .replace(",", "_comma_")
+              .replace(":", "_")
+              .replace(" ", "_") }}
+{%- endmacro %}
+
+
+{% macro abridged_fqn(entity) -%}
+    {%- set prefix = Config.default_namespace + '::'
+        if Config.get('default_namespace')
+        else ''
+    -%}
+    {%- set s = entity.fully_qualified_name -%}
+    {%- if s.startswith(prefix) -%}
+        {{ escape( s[prefix | length:] ) }}
+    {%- else -%}
+        {{ escape(s) }}
     {%- endif -%}
 {%- endmacro %}
 

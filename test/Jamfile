@@ -14,12 +14,21 @@ import toolset ;
 
 import ../docca.jam ;
 
+local templates = [ glob-tree-ex ../include/docca : *.jinja2 ] ;
 
 make python-tests
     : docca_test.py
     : @run-pytest
     : <include>..
       <dependency>../docca.py
+    ;
+
+make template-tests
+    : docca_qbk_test.py
+    : @run-pytest
+    : <include>..
+      <dependency>../docca.py
+      <dependency>$(templates)
     ;
 
 .STATUS       = [ modules.peek testing : .STATUS ] ;
@@ -35,8 +44,11 @@ make python-tests
 rule run-pytest ( target : sources + : properties * )
 {
     local includes =  [ on $(target) return $(INCLUDE) ] ;
-    PYTHONPATH on $(target) = [
-        common.prepend-path-variable-command PYTHONPATH : $(includes) ] ;
+    PYTHONPATH on $(target) =
+        [ common.prepend-path-variable-command PYTHONPATH
+        : $(__file__:D)
+          $(includes)
+        ] ;
 }
 
 actions run-pytest

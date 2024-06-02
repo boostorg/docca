@@ -175,6 +175,11 @@ class Cell(Block): # A table cell
 
 Entity class hierarchy:
 
+class Location():
+    file -> None|str
+    line -> None|int
+    column -> Nonw|int
+
 class Entity():
     id -> str # equal to the entity's key in the top entities mapping
     name -> str
@@ -184,7 +189,7 @@ class Entity():
     brief -> [Block]
     description -> [Block]
 
-    header -> str # path to the header that contains declaration
+    location -> Location
     fully_qualified_name -> str
     path -> [str] # list of names of parent scopes starting from the topmost
                   # and ending with the entity's name itself
