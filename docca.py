@@ -724,7 +724,7 @@ class Generalization():
         assert self.access
 
         if element.get('refid'):
-            self.base = make_entity_reference(element, derived.index)
+            self.base = Phrase([make_entity_reference(element, derived.index)])
         else:
             self.base = text_with_refs(element, derived.index)
 

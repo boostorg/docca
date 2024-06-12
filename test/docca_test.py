@@ -717,12 +717,13 @@ def test_class():
 
     assert d.bases[0].access == 'public'
     assert not d.bases[0].is_virtual
-    assert isinstance(d.bases[0].base, docca.EntityRef)
-    assert d.bases[0].base.entity == c
+    assert isinstance(d.bases[0].base, docca.Phrase)
+    assert isinstance(d.bases[0].base[0], docca.EntityRef)
+    assert d.bases[0].base[0].entity == c
 
     assert d.bases[1].access == 'private'
     assert d.bases[1].is_virtual
-    assert d.bases[1].base.entity == c
+    assert d.bases[1].base[0].entity == c
 
     assert d.bases[2].access == 'protected'
     assert d.bases[2].is_virtual

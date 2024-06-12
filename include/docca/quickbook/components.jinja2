@@ -441,7 +441,7 @@ static
     {% if loop.first %}:{% else %},{% endif -%}
     {{ ' ' ~ entry.access ~ ' ' }}
     {%- if entry.is_virtual %}virtual {% endif -%}
-    {{ phrase_part(entry.base, in_code=True) }}
+    {{ phrase(entry.base, in_code=True) }}
 {%- endfor -%}
 {%- endif -%}
 {%- if entity is Enum and entity.underlying_type %}
