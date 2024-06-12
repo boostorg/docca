@@ -210,6 +210,14 @@ def entities():
             'id': 'cl1',
             'items': [
                 { 'tag': 'compoundname', 'items': ['klass'] },
+                {
+                    'tag': 'detaileddescription',
+                    'items': [
+                        'This class contains ',
+                        { 'tag': 'ref', 'refid': 'cl2', 'items': ['nested'] },
+                        '.',
+                    ],
+                },
                 { 'tag': 'innerclass', 'refid': cl2.id },
                 { 'tag': 'sectiondef', 'kind': 'friend', 'items': [f1] },
                 {
@@ -311,7 +319,11 @@ def entities():
                 { 'tag': 'sectiondef', 'items': [e1, t1, v1] },
                 {
                     'tag': 'briefdescription',
-                    'items': ['This is a namespace \n '],
+                    'items': [
+                        'This namespace contains ',
+                        { 'tag': 'ref', 'refid': 'cl1', 'items': ['nested'] },
+                        '.',
+                    ],
                 },
                 {
                     'tag': 'location',
@@ -769,7 +781,7 @@ def test_simple_summary_table(entities, render):
           [
             [[*[link ns1 ns1]]
             ]
-            [This is a namespace
+            [This namespace contains [link ns1__ns2__klass `nested`].
             ]
           ]
           [
@@ -1011,6 +1023,9 @@ def test_write_entity(cfg, entities, render):
             ]
           ]
         ]
+
+        [heading Description]
+        This class contains [link ns1__ns2__klass.nested `nested`].
 
 
 

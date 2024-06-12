@@ -553,10 +553,10 @@ class Entity():
         return result
 
     def resolve_references(self):
-        self.brief = make_blocks(self._brief, self)
+        self.brief = make_blocks(self._brief, self.index)
         delattr(self, '_brief')
 
-        self.description = make_blocks(self._description, self)
+        self.description = make_blocks(self._description, self.index)
         delattr(self, '_description')
 
     def __lt__(self, other):
