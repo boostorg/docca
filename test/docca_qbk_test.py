@@ -77,10 +77,11 @@ def entities():
         'kind': 'function',
         'id': 'f2',
         'static': 'yes',
+        'constexpr': 'yes',
         'items': [
             { 'tag': 'name', 'items': ['func'] },
             { 'tag': 'argsstring', 'items': ['()'] },
-            { 'tag': 'type', 'items': ['void'] },
+            { 'tag': 'type', 'items': ['constexpr void'] },
         ]
     }
     g1 = {
@@ -126,6 +127,7 @@ def entities():
         'kind': 'function',
         'id': 'cl1_c',
         'explicit': 'yes',
+        'constexpr': 'yes',
         'items': [
             { 'tag': 'name', 'items': ['klass'] },
             { 'tag': 'argsstring', 'items': ['()'] },
@@ -876,8 +878,8 @@ def test_function_declaration(entities, render):
             int (&n) [1],
             ``[link ns1__ns2__klass [^ns1::ns2::klass]]`` = ``[link ns1__Var [^ns1::Var]]``,
             unsigned t = 2);''')
-    assert render(entities['f2']) == 'static\nvoid\nfunc();'
-    assert render(entities['cl1_c']) == 'explicit\nklass();'
+    assert render(entities['f2']) == 'static constexpr\nvoid\nfunc();'
+    assert render(entities['cl1_c']) == 'explicit\nconstexpr\nklass();'
     assert render(entities['cl1_d']) == '~klass() noexcept(false);'
     assert render(entities['o=']) == 'void\noperator=() noexcept;'
     assert render(entities['g1']) == 'void\ng() &&;'
@@ -1142,6 +1144,7 @@ def test_write_entity(cfg, entities, render):
 
         ```
         explicit
+        constexpr
         klass();
         ```
 
@@ -1199,7 +1202,7 @@ def test_write_entity(cfg, entities, render):
 
 
         ```
-        static
+        static constexpr
         void
         func();
         ```

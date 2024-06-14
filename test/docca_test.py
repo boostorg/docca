@@ -1435,7 +1435,7 @@ def test_function():
             'items': [
                 { 'tag': 'name', 'items': ['func1'] },
                 { 'tag': 'argsstring', 'items': ['()'] },
-                { 'tag': 'type', 'items': ['void'] },
+                { 'tag': 'type', 'items': ['constexpr void'] },
                 { 'tag': 'briefdescription', 'items': ['a function'] },
                 { 'tag': 'detaileddescription', 'items': ['this function'] },
             ]

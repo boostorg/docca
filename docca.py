@@ -491,6 +491,16 @@ def make_entity_reference(element, index, allow_missing_refs=False):
 def text_with_refs(element, index):
     return Phrase(phrase_content(element, index, allow_missing_refs=True))
 
+def resolve_type(element, index):
+    result = text_with_refs(element, index)
+    if (
+        result
+        and isinstance(result[0], str)
+        and result[0].startswith('constexpr')
+    ):
+        result[0] = result[0][len('constexpr'):].lstrip()
+    return result
+
 _chartable = {
     ord('\r'): None,
     ord('\n'): None,
@@ -832,7 +842,7 @@ class Function(Value):
     def resolve_references(self):
         super().resolve_references()
 
-        self.return_type = text_with_refs(self._return_type, self.index)
+        self.return_type = resolve_type(self._return_type, self.index)
         delattr(self, '_return_type')
 
         self.parameters = [Parameter(elem, self) for elem in self._parameters]
@@ -953,7 +963,7 @@ class Variable(Value):
         self.value = text_with_refs(self._value, self.index)
         delattr(self, '_value')
 
-        self.type = text_with_refs(self._type, self.index)
+        self.type = resolve_type(self._type, self.index)
         delattr(self, '_type')
 
 
