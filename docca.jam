@@ -10,6 +10,7 @@
 
 
 import "class" : new ;
+import common ;
 import doxygen ;
 import feature ;
 import param ;
@@ -76,7 +77,7 @@ rule reference ( target : sources * : requirements * : default-build *
     # Adopt as a target index.xml which was created as a side-effect
     make-explicit $(target-dir)/index.xml $(project)
         : $(target-dir)/stamp
-        : @docca.null-action
+        : @docca.touch-action
         ;
 
     #--------------------------------------------------------------------------
@@ -136,6 +137,8 @@ rule reference ( target : sources * : requirements * : default-build *
     make-explicit $(target-dir)/xml-pages $(project)
         : $(target-dir)/xml-pages.xml
         : @docca.null-action
+        :
+        : <implicit-dependency>$(target-dir)/xml-pages.xml
         ;
 
     make-explicit $(target-dir)/stage1/results $(project)
@@ -202,6 +205,12 @@ rule pyreference ( target : sources * : requirements * : default-build *
         ;
     $(project).mark-target-as-explicit $(target-dir)/stamp ;
 
+    # Adopt as a target index.xml which was created as a side-effect
+    make-explicit $(target-dir)/index.xml $(project)
+        : $(target-dir)/stamp
+        : @docca.touch-action
+        ;
+
     # Construct a config file from parameters provided by the build system
     make $(target-dir)/docca-config.json
         :
@@ -211,7 +220,7 @@ rule pyreference ( target : sources * : requirements * : default-build *
         ;
 
     generate $(target)
-        : $(target-dir)/stamp
+        : $(target-dir)/index.xml
         : <generating-rule>@docca.make-qbk2
           $(requirements)
           <docca:config>$(target-dir)/docca-config.json
@@ -328,8 +337,15 @@ local rule fix-source ( project path )
 }
 
 
-rule null-action
+.TOUCH = [ common.file-touch-command ] ;
+actions touch-action
 {
+    $(.TOUCH) "$(<)"
+}
+
+rule null-action ( target : srcs * : props * )
+{
+    NOUPDATE $(target) ;
 }
 
 rule generate-reference ( target : sources + : properties * )
@@ -338,7 +354,7 @@ rule generate-reference ( target : sources + : properties * )
 }
 actions generate-reference
 {
-    "$(PYTHON)" "$(RUNNER)" -i"$(>[1]:B=index:S=.xml)" -o"$(<)" -c"$(>[3-])" -T"$(>[2])" -I"$(INCLUDE)"
+    "$(PYTHON)" "$(RUNNER)" -i"$(>[1])" -o"$(<)" -c"$(>[3-])" -T"$(>[2])" -I"$(INCLUDE)"
 }
 
 rule make-docca-config ( target : sources * : properties * )
