@@ -673,7 +673,18 @@ static
         [*{{ phrase(part, in_code=in_code) }}]
     {%- elif part is EntityRef -%}
         {%- if in_code %}``{% endif -%}
-        [link {{ link(part.entity, prefer_overload=True) }}
+        {%- if Config.get('external_marker')
+            and (part.entity.brief | map(attribute="text") | join | trim)
+                == Config.get('external_marker') -%}
+            [@
+            {%- for part in part.entity.description -%}
+                {%- if part is Section and part.kind == Section.See -%}
+                    {{ part | map(attribute="text") | join | trim }}
+                {%- endif -%}
+            {%- endfor -%}
+        {%- else -%}
+            [link {{ link(part.entity, prefer_overload=True) }}
+        {%- endif -%}
         {%- if in_code %} [^{{ abridged_fqn(part.entity) }}]]``
         {%- else %} `{{ phrase(part) }}`]
         {%- endif -%}

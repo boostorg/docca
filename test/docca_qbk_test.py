@@ -337,6 +337,38 @@ def entities():
         }),
         index)
 
+    ostream = {
+        'tag': 'memberdef',
+        'kind': 'typedef',
+        'id': 'ostream',
+        'items': [
+            { 'tag': 'name', 'items': ['ostream'] },
+            { 'tag': 'type', 'items': ['void'] },
+            { 'tag': 'briefdescription', 'items': ['!!!'] },
+            {
+                'tag': 'detaileddescription',
+                'items': [
+                    {
+                        'tag': 'simplesect',
+                        'kind': 'see',
+                        'items': [
+                            { 'tag': 'para', 'items': ['  http://ostream.org  '] },
+                        ],
+                    },
+                ],
+            }
+        ],
+    }
+    std = docca.Namespace(
+        make_elem({
+            'tag': 'compound',
+            'id': 'std',
+            'items': [
+                { 'tag': 'compoundname', 'items': ['std'] },
+                { 'tag': 'sectiondef', 'items': [ostream] },
+            ]
+        }),
+        index)
     for e in index.values():
         e.resolve_references()
 
@@ -494,7 +526,8 @@ def test_abridged_fqn(entities, cfg, render):
     assert render(entities['ns1']) == 'ns1'
     assert render(entities['cl1']) == 'ns2::klass'
 
-def test_phrase(entities, render):
+def test_phrase(entities, cfg, render):
+    cfg['external_marker'] = '!!!'
     render.template = '''
         {%- import "docca/quickbook/components.jinja2" as qbk -%}
         {{ qbk.phrase(entities) }}'''
@@ -506,11 +539,15 @@ def test_phrase(entities, render):
         docca.Linebreak(),
         docca.UrlLink('http://a.b/c', ['link text']),
         docca.EntityRef(entities['g1'], ['ref text']),
+        docca.Linebreak(),
+        docca.EntityRef(entities['ostream'], ['output stream']),
     ]
     assert render(parts) == textwrap.dedent('''\
         regular text `monospaced text` ['emph [*bold]]
 
-        [@http://a.b/c link text][link ns1__ns2__klass.g `ref text`]''')
+        [@http://a.b/c link text][link ns1__ns2__klass.g `ref text`]
+
+        [@http://ostream.org `output stream`]''')
 
     render.template = '''
         {%- import "docca/quickbook/components.jinja2" as qbk -%}
@@ -518,7 +555,9 @@ def test_phrase(entities, render):
     assert render(parts) == textwrap.dedent('''\
         regular text `monospaced text` ['emph [*bold]]
 
-        [@http://a.b/c link text]``[link ns1__ns2__klass.g [^ns1::ns2::klass::g]]``''')
+        [@http://a.b/c link text]``[link ns1__ns2__klass.g [^ns1::ns2::klass::g]]``
+
+        ``[@http://ostream.org [^std::ostream]]``''')
 
 def test_description(render):
     render.template = '''
