@@ -372,7 +372,8 @@ Official repository: https://github.com/boostorg/json
 {% if Config.get('convenience_header')
     and entity.location
     and (entity.scope is Namespace
-        or (entity is Function and entity.is_friend)) -%}
+        or (entity is Function
+            and entity.kind in (FunctionKind.free, FunctionKind.friend))) -%}
 Convenience header {{ source_header(Config.convenience_header) }}
 {%- endif %}
 {{ caller("members") }}
@@ -692,6 +693,7 @@ static
     {%- elif entity.scope and not entity.scope is Namespace -%}
         {{ sanitize_path_segment(entity.name) }}
         {%- if entity is Function and entity.is_friend -%}_fr{%- endif -%}
+        {%- if entity is Function and entity.is_free -%}_fe{%- endif -%}
     {%- else -%}
         {%- set sep = joiner("__") -%}
         {%- for segment in entity.path -%}
@@ -714,6 +716,11 @@ static
         {%- endif -%}
         {%- if (entity is Function or entity is OverloadSet) and entity.is_friend %}
             {%- set ns.suffix = ns.suffix + '_fr' -%}
+        {%- endif -%}
+        {%- if (entity is Function or entity is OverloadSet)
+                and entity.is_free
+                and entity.scope is Type %}
+            {%- set ns.suffix = ns.suffix + '_fe' -%}
         {%- endif -%}
         {%- if entity is Function %}
             {%- if not prefer_overload and not entity.is_sole_overload %}
