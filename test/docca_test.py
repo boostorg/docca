@@ -584,6 +584,12 @@ def test_namespace():
     assert ns.location.file == 'some/file.cpp'
     assert ns.location.line == 100
     assert ns.location.column == 12
+    assert ns.lookup('MyNs') == ns
+    assert ns.lookup('OtherNs') == ns2
+    assert ns.lookup('OtherNs::MyNs') == ns
+    assert ns2.lookup('OtherNs') == ns2
+    assert ns2.lookup('MyNs') == ns
+    assert ns2.lookup('OtherNs::MyNs') == ns
 
     index = dict()
     c = docca.Class(
@@ -613,6 +619,21 @@ def test_namespace():
     assert c.name == 'MyClass'
     assert c.scope == ns
     assert c.fully_qualified_name == 'OtherNs::MyClass'
+    assert c.lookup('MyClass') == c
+    assert c.lookup('OtherNs') == ns
+    assert c.lookup('OtherNs::MyClass') == c
+
+    ns2.name = 'TopNs'
+    ns2.members[ns.name] = ns
+    ns.scope = ns2
+    assert c.lookup('TopNs') == ns2
+    assert c.lookup('TopNs::OtherNs') == ns
+    assert c.lookup('TopNs::OtherNs::MyClass') == c
+    assert ns2.lookup('TopNs') == ns2
+    assert ns2.lookup('TopNs::OtherNs') == ns
+    assert ns2.lookup('TopNs::OtherNs::MyClass') == c
+    assert ns2.lookup('OtherNs') == ns
+    assert ns2.lookup('OtherNs::MyClass') == c
 
 def test_class():
     for Kind in (docca.Union, docca.Struct, docca.Class):

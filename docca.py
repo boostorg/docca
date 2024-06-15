@@ -474,8 +474,10 @@ def make_url_link(element, index, allow_missing_refs=False):
 def make_linebreak(element, index, allow_missing_refs=None):
     return Linebreak()
 
-def make_entity_reference(element, index, allow_missing_refs=False):
-    refid = element.get('refid')
+def make_entity_reference(
+    element, index, refid=None, allow_missing_refs=False
+):
+    refid = refid or element.get('refid')
     assert refid
 
     target = index.get(refid)
@@ -562,12 +564,50 @@ class Entity():
         result.append(self)
         return result
 
+    def lookup(self, qname):
+        name_parts = qname.split('::')
+        if not name_parts:
+            return
+
+        scope = self
+        while scope is not None:
+            if scope.name == name_parts[0]:
+                break
+            else:
+                found = None
+                for entity in scope.members.values():
+                    if entity.name == name_parts[0]:
+                        found = entity
+                        break
+                if found is None:
+                    scope = scope.scope
+                else:
+                    break
+        if not scope:
+            return
+
+        for part in name_parts:
+            if scope.name != part:
+                found = None
+                for entity in scope.members.values():
+                    if entity.name == part:
+                        found = entity
+                        break
+                scope = found
+                if found is None:
+                    break
+
+        return scope
+
     def resolve_references(self):
         self.brief = make_blocks(self._brief, self.index)
         delattr(self, '_brief')
 
         self.description = make_blocks(self._description, self.index)
         delattr(self, '_description')
+
+    def update_scopes(self):
+        pass
 
     def __lt__(self, other):
         return self.name < other.name
@@ -587,8 +627,8 @@ class Compound(Entity):
                     section.get('prot', Access.public),
                     section.get('refid')))
 
-    def resolve_references(self):
-        super().resolve_references()
+    def update_scopes(self):
+        super().update_scopes()
 
         for access, refid in self._nested:
             entity = self.index[refid]
@@ -598,6 +638,11 @@ class Compound(Entity):
             assert entity.name not in self.members
             self.members[entity.name] = entity
         delattr(self, '_nested')
+
+    def resolve_references(self):
+        super().resolve_references()
+        if getattr(self, '_nested', None):
+            self.update_scopes()
 
 
 class Member(Entity):
@@ -727,14 +772,22 @@ class Class(Scope, Compound, Type):
         self.bases = [Generalization(entry, self) for entry in self._bases]
         delattr(self, '_bases')
 
+
 class Generalization():
     def __init__(self, element, derived):
         self.is_virtual = element.get('virt') == 'virtual'
         self.access = element.get('prot')
         assert self.access
 
-        if element.get('refid'):
-            self.base = Phrase([make_entity_reference(element, derived.index)])
+        refid = element.get('refid')
+        if not refid:
+            entity = derived.lookup( ''.join(element.itertext()).strip() )
+            if entity is not None:
+                refid = entity.id
+
+        if refid:
+            self.base = Phrase(
+                [make_entity_reference(element, derived.index, refid)])
         else:
             self.base = text_with_refs(element, derived.index)
 
@@ -1123,6 +1176,9 @@ def collect_data(parent_dir, refs):
 
     for entity in result.values():
         assert entity is not None
+        entity.update_scopes()
+
+    for entity in result.values():
         entity.resolve_references();
 
     return result
