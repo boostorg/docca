@@ -1,4 +1,12 @@
 {#
+Copyright (c) 2024 Dmitry Arkhipov (grisumbras@yandex.ru)
+
+Distributed under the Boost Software License, Version 1.0. (See accompanying
+file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+
+Official repository: https://github.com/boostorg/json
+
+
 This template produces API reference in QuickBook format
 
 The template expects its context to contain an `entities` variable, which is a
@@ -144,8 +152,33 @@ class CodeBlock(Block): # A block of code; effectively a sequence of code lines
     def __len__(self) -> int
     def __getitem__(self, pos) -> [str]
 
+class Table(Block): # A table
+    cols -> int
+    width = None|str
+    caption = None|Paragraph
+
+    def __len__(self) -> int
+    def __getitem__(self, pos) -> [[Cell]]
+
+class Cell(Block): # A table cell
+    col_span -> int
+    row_span -> int
+    is_header -> bool
+    horizontal_align -> str
+    vertical_align -> str
+    width -> None|str
+    role -> None|str
+
+    def __len__(self) -> int
+    def __getitem__(self, pos) -> [Block]
+
 
 Entity class hierarchy:
+
+class Location():
+    file -> None|str
+    line -> None|int
+    column -> Nonw|int
 
 class Entity():
     id -> str # equal to the entity's key in the top entities mapping
@@ -156,7 +189,7 @@ class Entity():
     brief -> [Block]
     description -> [Block]
 
-    header -> str # path to the header that contains declaration
+    location -> Location
     fully_qualified_name -> str
     path -> [str] # list of names of parent scopes starting from the topmost
                   # and ending with the entity's name itself

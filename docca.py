@@ -1,13 +1,32 @@
 #!/usr/bin/env python
 
+#
+# Copyright (c) 2024 Dmitry Arkhipov (grisumbras@yandex.ru)
+#
+# Distributed under the Boost Software License, Version 1.0. (See accompanying
+# file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+#
+# Official repository: https://github.com/boostorg/json
+#
+
 import argparse
-import contextlib
 import jinja2
 import json
 import io
 import os.path
 import sys
 import xml.etree.ElementTree as ET
+
+
+class Nullcontext():
+    def __init__(self):
+        pass
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        pass
 
 
 class Access:
@@ -78,6 +97,7 @@ class UrlLink(Phrase):
     def __init__(self, url, parts):
         super().__init__(parts)
         self.url = url
+        assert url
 
     @property
     def text(self):
@@ -100,9 +120,22 @@ class Paragraph(PhraseContainer, Block):
     def __len__(self):
         return len(self._parts)
 
+    @property
+    def text(self):
+        return ''.join([
+            (p if isinstance(p, str) else p.text) for p in self._parts
+        ])
+
 class List(Block):
-    def __init__(self, is_ordered, items):
-        self.is_ordered = is_ordered
+    Arabic = '1'
+    LowerLatin = 'a'
+    UpperLatin = 'A'
+    LowerRoman = 'i'
+    UpperRoman = 'I'
+
+    def __init__(self, kind, items):
+        self.kind = kind
+        self.is_ordered = kind is not None
         self._items = items
 
     def __getitem__(self, pos):
@@ -113,13 +146,14 @@ class List(Block):
 
 class ListItem(Block):
     def __init__(self, blocks):
+        assert blocks
         self._blocks = blocks
 
     def __getitem__(self, pos):
-        return self._items[pos]
+        return self._blocks[pos]
 
     def __len__(self):
-        return len(self._items)
+        return len(self.blocks)
 
 class Section(Block):
     See = 'see'
@@ -152,10 +186,10 @@ class Section(Block):
         return len(self._blocks)
 
 class ParameterList(Block):
-    parameters = 'param'
-    return_values = 'retval'
-    exceptions = 'exception'
-    template_parameters = 'templateparam'
+    Parameters = 'param'
+    ReturnValues = 'retval'
+    Exceptions = 'exception'
+    TemplateParameters = 'templateparam'
 
     def __init__(self, kind, items):
         self.kind = kind
@@ -202,20 +236,301 @@ class CodeBlock(Block):
     def __len__(self):
         return len(self._lines)
 
+class Table(Block):
+    def __init__(self, cols, rows, caption=None, width=None):
+        self.cols = cols
+        self.width = width
+        self.caption = caption
+        self._rows = rows
+
+    def __getitem__(self, pos):
+        return self._rows[pos]
+
+    def __len__(self):
+        return len(self._rows)
+
+class Cell(Block):
+    def __init__(
+        self, blocks,
+        col_span=1, row_span=1, is_header=False, horizontal_align=None,
+        vertical_align=None, width=None, role=None
+    ):
+        self._blocks = blocks
+
+        self.col_span = int(col_span or 1)
+        self.row_span = int(row_span or 1)
+        self.is_header = is_header or False
+        self.horizontal_align = horizontal_align
+        self.vertical_align = vertical_align
+        self.width = width
+        self.role = role
+
+    def __getitem__(self, pos):
+        return self._blocks[pos]
+
+    def __len__(self):
+        return len(self._blocks)
+
+def make_blocks(element, index):
+    if element is None:
+        return []
+
+    result = []
+    cur_para = []
+
+    def finish_paragraph(cur_para):
+        if cur_para:
+            if isinstance(cur_para[0], str):
+                cur_para[0] = cur_para[0].lstrip()
+                if not cur_para[0]:
+                    cur_para = cur_para[1:]
+        if cur_para:
+            if isinstance(cur_para[-1], str):
+                cur_para[-1] = cur_para[-1].rstrip()
+                if not cur_para[-1]:
+                    cur_para = cur_para[:-1]
+
+        # spaces after linebreaks usually cause issues
+        for n in range(1, len(cur_para)):
+            if (isinstance(cur_para[n - 1], Linebreak)
+                    and isinstance(cur_para[n], str)):
+                cur_para[n] = cur_para[n].lstrip()
+
+        if cur_para:
+            result.append(Paragraph(cur_para))
+
+        return []
+
+    if element.text:
+        cur_para.append(remove_endlines(element.text))
+
+    for child in element:
+        func = {
+            'itemizedlist': make_list,
+            'simplesect': make_section,
+            'programlisting': make_codeblock,
+            'parameterlist': make_parameters,
+            'table': make_table,
+        }.get(child.tag)
+        if func:
+            cur_para = finish_paragraph(cur_para)
+            result.append(func(child, index))
+        elif child.tag == 'para':
+            cur_para = finish_paragraph(cur_para)
+            result.extend(make_blocks(child, index))
+        else:
+            cur_para.append(make_phrase(child, index))
+        if child.tail:
+            cur_para.append(remove_endlines(child.tail))
+
+    finish_paragraph(cur_para)
+    return result
+
+def make_list(element, index):
+    items = []
+    for child in element:
+        assert child.tag == 'listitem'
+        items.append(make_blocks(child, index))
+    return List(element.get('type'), items)
+
+def make_parameters(element, index):
+    result = []
+    descr = None
+    kind = element.get('kind')
+    for descr_block in element:
+        assert descr_block.tag == 'parameteritem'
+        descr = None
+        params = []
+        for item in descr_block:
+            if item.tag == 'parameterdescription':
+                assert descr == None
+                descr = item
+                continue
+
+            assert item.tag == 'parameternamelist'
+
+            name = item.find('parametername')
+            direction = name.get('direction') if name is not None else None
+            params.append(
+                ParameterItem(
+                    text_with_refs(item.find('parametertype'), index),
+                    text_with_refs(name, index),
+                    direction))
+
+        assert descr is not None
+        result.append(ParameterDescription(make_blocks(descr, index), params))
+    return ParameterList(kind, result)
+
+def make_section(element, index):
+    title = None
+    if element and element[0].tag == 'title':
+        title = phrase_content(element[0], index)
+    title = Paragraph(title or [])
+
+    kind = element.get('kind')
+
+    parts = []
+    for child in element:
+        if child.tag == 'para':
+            parts.extend(make_blocks(child, index))
+
+    return Section(kind, title, parts)
+
+def make_codeblock(element, index):
+    lines = []
+    for line in element:
+        assert line.tag == 'codeline'
+        text = ''
+        for hl in line:
+            assert hl.tag == 'highlight'
+            if hl.text:
+                text += hl.text
+
+            for part in hl:
+                if part.tag == 'sp':
+                    text += ' '
+                elif part.tag == 'ref':
+                    text += part.text or ''
+                if part.tail:
+                    text += part.tail
+            if hl.tail:
+                text += hl.tail
+        lines.append(text)
+
+    return CodeBlock(lines)
+
+def make_table(element, index):
+    cols = element.get('cols')
+
+    caption = None
+    if len(element) and element[0].tag == 'caption':
+        caption = phrase_content(element[0], index)
+        caption = Paragraph(caption or [])
+
+    rows = []
+    for row in element[(1 if caption else 0):]:
+        assert row.tag == 'row'
+        cells = []
+        for cell in row:
+            cells.append(Cell(
+                make_blocks(cell, index),
+                col_span=cell.get('colspan'),
+                row_span=cell.get('rowspan'),
+                is_header=cell.get('thead'),
+                horizontal_align=cell.get('align'),
+                vertical_align=cell.get('valign'),
+                width=cell.get('width'),
+                role=cell.get('class'),
+            ))
+        rows.append(cells)
+
+    return Table(cols, rows, caption)
+
+def phrase_content(element, index, allow_missing_refs=False):
+    if element is None:
+        return []
+
+    result = []
+    if element.text:
+        result.append(remove_endlines(element.text))
+
+    for child in element:
+        result.append(
+            make_phrase(child, index, allow_missing_refs=allow_missing_refs))
+        if child.tail:
+            result.append(remove_endlines(child.tail))
+
+    return result
+
+def make_phrase(element, index, allow_missing_refs=False):
+    func = {
+        'bold': make_strong,
+        'computeroutput': make_monospaced,
+        'verbatim': make_monospaced,
+        'emphasis': make_emphasised,
+        'ulink': make_url_link,
+        'linebreak': make_linebreak,
+        'ref': make_entity_reference,
+    }[element.tag]
+    return func(element, index, allow_missing_refs=allow_missing_refs)
+
+def make_strong(element, index, allow_missing_refs=False):
+    return Strong(
+        phrase_content(element, index, allow_missing_refs=allow_missing_refs))
+
+def make_monospaced(element, index, allow_missing_refs=False):
+    return Monospaced(
+        phrase_content(element, index, allow_missing_refs=allow_missing_refs))
+
+def make_emphasised(element, index, allow_missing_refs=False):
+    return Emphasised(
+        phrase_content(element, index, allow_missing_refs=allow_missing_refs))
+
+def make_url_link(element, index, allow_missing_refs=False):
+    return UrlLink(
+        element.get('url'),
+        phrase_content(element, index, allow_missing_refs=allow_missing_refs))
+
+def make_linebreak(element, index, allow_missing_refs=None):
+    return Linebreak()
+
+def make_entity_reference(
+    element, index, refid=None, allow_missing_refs=False
+):
+    refid = refid or element.get('refid')
+    assert refid
+
+    target = index.get(refid)
+    if target:
+        return EntityRef(
+            target,
+            phrase_content(
+                element, index, allow_missing_refs=allow_missing_refs))
+
+    if allow_missing_refs:
+        return Phrase(phrase_content(element, index, allow_missing_refs=True))
+
+def text_with_refs(element, index):
+    return Phrase(phrase_content(element, index, allow_missing_refs=True))
+
+def resolve_type(element, index):
+    result = text_with_refs(element, index)
+    if (
+        result
+        and isinstance(result[0], str)
+        and result[0].startswith('constexpr')
+    ):
+        result[0] = result[0][len('constexpr'):].lstrip()
+    return result
+
+_chartable = {
+    ord('\r'): None,
+    ord('\n'): None,
+}
+def remove_endlines(s):
+    return s.translate(_chartable)
+
+
+class Location():
+    def __init__(self, elem):
+        self.file = elem.get('file')
+
+        self.line = elem.get('line')
+        if self.line:
+            self.line = int(self.line)
+
+        self.column = elem.get('column')
+        if self.column :
+            self.column = int(self.column)
+
 
 class Entity():
     access = Access.public
-    _table = {
-        ord('\r'): None,
-        ord('\n'): None,
-    }
 
-    def __init__(self, element, scope, index):
+    def __init__(self, element, scope, index=dict()):
         self.id = element.get('id')
         assert self.id
 
-        self.brief = element.find('briefdescription')
-        self.description = element.find('detaileddescription')
         self.scope = scope
 
         self.name = ''.join( element.find(self.nametag).itertext() )
@@ -224,16 +539,19 @@ class Entity():
         self.groups = []
 
         loc = element.find('location')
-        self._header = loc.get('file') if (loc is not None) else None
+        self._location = Location(loc) if (loc is not None) else None
+
+        self._brief = element.find('briefdescription')
+        self._description = element.find('detaileddescription')
 
         self.index = index
         index[self.id] = self
 
     @property
-    def header(self):
+    def location(self):
         return (
-            self._header
-            or (self.scope.header if self.scope else None)
+            self._location
+            or (self.scope.location if self.scope else None)
         )
 
     @property
@@ -246,226 +564,62 @@ class Entity():
         result.append(self)
         return result
 
+    def lookup(self, qname):
+        name_parts = qname.split('::')
+        if not name_parts:
+            return
+
+        scope = self
+        while scope is not None:
+            if scope.name == name_parts[0]:
+                break
+            else:
+                found = None
+                for entity in scope.members.values():
+                    if entity.name == name_parts[0]:
+                        found = entity
+                        break
+                if found is None:
+                    scope = scope.scope
+                else:
+                    break
+        if not scope:
+            return
+
+        for part in name_parts:
+            if scope.name != part:
+                found = None
+                for entity in scope.members.values():
+                    if entity.name == part:
+                        found = entity
+                        break
+                scope = found
+                if found is None:
+                    break
+
+        return scope
+
     def resolve_references(self):
-        self.brief = self.resolve_description(self.brief)
-        self.description = self.resolve_description(self.description)
+        self.brief = make_blocks(self._brief, self.index)
+        delattr(self, '_brief')
 
-    def resolve_description(self, element):
-        return self._block(element)
+        self.description = make_blocks(self._description, self.index)
+        delattr(self, '_description')
 
-    def text_with_refs(self, elem):
-        if elem is None:
-            parts = []
-        else:
-            parts = self._phrase_content(elem, allow_missing_refs=True)
-        return Phrase(parts)
-
-    def entity_reference(self, element, allow_missing_refs=False):
-        refid = element.get('refid')
-        assert refid
-
-        entity = self.index.get(refid)
-        if entity:
-            return EntityRef(
-                entity,
-                self._phrase_content(
-                    element, allow_missing_refs=allow_missing_refs))
-
-        if allow_missing_refs:
-            Phrase(self._phrase_content(element, allow_missing_refs=True))
-
+    def update_scopes(self):
+        pass
 
     def __lt__(self, other):
         return self.name < other.name
-
-    def _block(self, element):
-        result = []
-        cur_para = []
-
-        def finish_paragraph(cur_para):
-            if cur_para:
-                if isinstance(cur_para[0], str):
-                    cur_para[0] = cur_para[0].lstrip()
-                    if not cur_para[0]:
-                        cur_para = cur_para[1:]
-            if cur_para:
-                if isinstance(cur_para[-1], str):
-                    cur_para[-1] = cur_para[-1].rstrip()
-                    if not cur_para[-1]:
-                        cur_para = cur_para[:-1]
-
-            # spaces after linebreaks usually cause issues
-            for n in range(1, len(cur_para)):
-                if (isinstance(cur_para[n - 1], Linebreak)
-                        and isinstance(cur_para[n], str)):
-                    cur_para[n] = cur_para[n].lstrip()
-
-            if cur_para:
-                result.append(Paragraph(cur_para))
-
-            return []
-
-        if element.text:
-            cur_para.append(self._remove_endlines(element.text))
-
-        for child in element:
-            func = {
-                'itemizedlist': self._list,
-                'simplesect': self._section,
-                'programlisting': self._codeblock,
-                'parameterlist': self._parameters,
-            }.get(child.tag)
-            if func:
-                cur_para = finish_paragraph(cur_para)
-                result.append(func(child))
-            elif child.tag == 'para':
-                cur_para = finish_paragraph(cur_para)
-                result.extend(self._block(child))
-            else:
-                cur_para.append(self._phrase(child))
-            if child.tail:
-                cur_para.append(self._remove_endlines(child.tail))
-
-        finish_paragraph(cur_para)
-        return result
-
-    def _list(self, element):
-        items = []
-        for child in element:
-            assert child.tag == 'listitem'
-            items.append(self._block(child))
-        return List(element.get('type') is not None, items)
-
-    def _parameters(self, element):
-        result = []
-        descr = None
-        kind = element.get('kind')
-        for descr_block in element:
-            assert descr_block.tag == 'parameteritem'
-            descr = None
-            params = []
-            for item in descr_block:
-                if item.tag == 'parameterdescription':
-                    assert descr == None
-                    descr = item
-                    continue
-
-                assert item.tag == 'parameternamelist'
-
-                name = item.find('parametername')
-                direction = name.get('direction') if name is not None else None
-                params.append(
-                    ParameterItem(
-                        self.text_with_refs(item.find('parametertype')),
-                        self.text_with_refs(name),
-                        direction))
-
-            assert descr
-            result.append(ParameterDescription(self._block(descr), params))
-        return ParameterList(kind, result)
-
-    def _section(self, element):
-        title = None
-        if element and element[0].tag == 'title':
-            title = self._phrase_content(element[0])
-        title = Paragraph(title or [])
-
-        kind = element.get('kind')
-
-        parts = []
-        for child in element:
-            if child.tag == 'para':
-                parts.extend(self._block(child))
-
-        return Section(kind, title, parts)
-
-    def _codeblock(self, element):
-        lines = []
-        for line in element:
-            assert line.tag == 'codeline'
-            text = ''
-            for hl in line:
-                assert hl.tag == 'highlight'
-                if hl.text:
-                    text += hl.text
-
-                for part in hl:
-                    if part.tag == 'sp':
-                        text += ' '
-                    elif part.tag == 'ref':
-                        text += part.text or ''
-                    if part.tail:
-                        text += part.tail
-                if hl.tail:
-                    text += hl.tail
-            lines.append(text)
-
-        return CodeBlock(lines)
-
-
-    def _phrase(self, element, allow_missing_refs=False):
-        func = {
-            'bold': self._strong,
-            'computeroutput': self._monospaced,
-            'emphasis': self._emphasised,
-            'ref': self.entity_reference,
-            'ulink': self._url_link,
-            'linebreak': self._linebreak,
-        }[element.tag]
-        return func(element, allow_missing_refs=allow_missing_refs)
-
-    def _phrase_content(self, element, allow_missing_refs=False):
-        result = []
-        if element.text:
-            result.append(self._remove_endlines(element.text))
-
-        for child in element:
-            result.append(
-                self._phrase(child, allow_missing_refs=allow_missing_refs))
-            if child.tail:
-                result.append(self._remove_endlines(child.tail))
-
-        return result
-
-    def _remove_endlines(self, s):
-        return s.translate(self._table)
-
-    def _strong(self, element, allow_missing_refs=False):
-        return Strong(
-            self._phrase_content(
-                element, allow_missing_refs=allow_missing_refs))
-
-    def _monospaced(self, element, allow_missing_refs=False):
-        return Monospaced(
-            self._phrase_content(
-                element, allow_missing_refs=allow_missing_refs))
-
-    def _emphasised(self, element, allow_missing_refs=False):
-        return Emphasised(
-            self._phrase_content(
-                element, allow_missing_refs=allow_missing_refs))
-
-    def _url_link(self, element, allow_missing_refs=False):
-        url = element.get('url')
-        assert url
-
-        return UrlLink(
-            url,
-            self._phrase_content(
-                element, allow_missing_refs=allow_missing_refs))
-
-    def _linebreak(self, element, allow_missing_refs=None):
-        return Linebreak()
 
 
 class Compound(Entity):
     nametag = 'compoundname'
 
-    def __init__(self, element, scope, index):
+    def __init__(self, element, scope, index=dict()):
         super().__init__(element, scope, index)
 
-        self.members={}
-
+        self.members = {}
         self._nested = []
         for section in element:
             if section.tag in ('innerclass', 'innernamespace', 'innergroup'):
@@ -473,25 +627,28 @@ class Compound(Entity):
                     section.get('prot', Access.public),
                     section.get('refid')))
 
-    def adopt(self, entity, access):
-        entity.scope = self
-        entity.access = access
+    def update_scopes(self):
+        super().update_scopes()
 
-        assert entity.name not in self.members
-        self.members[entity.name] = entity
+        for access, refid in self._nested:
+            entity = self.index[refid]
+            entity.scope = self
+            entity.access = access
+
+            assert entity.name not in self.members
+            self.members[entity.name] = entity
+        delattr(self, '_nested')
 
     def resolve_references(self):
         super().resolve_references()
-
-        for access, refid in self._nested:
-            self.adopt(self.index[refid], access)
-        delattr(self, '_nested')
+        if getattr(self, '_nested', None):
+            self.update_scopes()
 
 
 class Member(Entity):
     nametag = 'name'
 
-    def __init__(self, element, scope, index):
+    def __init__(self, element, scope, index=dict()):
         super().__init__(element, scope, index)
         self.access = element.get('prot') or Access.public
 
@@ -499,35 +656,27 @@ class Member(Entity):
 class Group(Compound):
     nametag = 'title'
 
+    def __init__(self, element, index=dict()):
+        super().__init__(element, None, index)
+
     def adopt(self, entity, access):
         entity.groups.append(self)
 
 
 class Templatable(Entity):
-    def __init__(self, element, scope, index):
+    def __init__(self, element, scope, index=dict()):
         super().__init__(element, scope, index)
-
-        tmp_elem = element.find('templateparamlist')
-        self.template_parameters = [
-            Parameter(tparam, self)
-            for tparam in (tmp_elem or [])
-        ]
-
+        self._template_parameters = element.find('templateparamlist')
         self.is_specialization = (
             (self.name.find('<') > 0) and (self.name.find('>') > 0))
 
     def resolve_references(self):
         super().resolve_references()
-
-        for tparam in self.template_parameters:
-            tparam.type = self.text_with_refs(tparam.type)
-            tparam.default_value = self.text_with_refs(tparam.default_value)
-
-            tparam.array = self.text_with_refs(tparam.array)
-            if tparam.array:
-                assert isinstance(tparam.type[-1], str)
-                assert tparam.type[-1].endswith('(&)')
-                tparam.type[-1] = tparam.type[-1][:-3]
+        self.template_parameters = [
+            Parameter(elem, self)
+            for elem in (self._template_parameters or [])
+        ]
+        delattr(self, '_template_parameters')
 
 
 class Type(Templatable):
@@ -536,13 +685,38 @@ class Type(Templatable):
 
 
 class Scope(Entity):
-    def __init__(self, element, scope, index):
+    def __init__(self, element, scope, index=dict()):
         super().__init__(element, scope, index)
 
-        self.name = self.name.split('::')[-1]
+        nesting = 0
+        name = ''
+        colon = False
+        for c in self.name:
+            if colon:
+                colon = False
+                if c == ':':
+                    name = ''
+                    continue
+                else:
+                    name += ':'
+
+            if nesting:
+                if c == '<':
+                    nesting += 1
+                elif c == '>':
+                    nesting -= 1
+                name += c
+            elif c == ':':
+                colon = True
+            else:
+                if c == '<':
+                    nesting += 1
+                name += c
+        if colon:
+            name.append(':')
+        self.name = name
 
         self.members = dict()
-        self._friends = []
         for section in element:
             if not section.tag == 'sectiondef':
                 continue
@@ -571,34 +745,31 @@ class Scope(Entity):
                     assert member.name not in self.members
                     self.members[member.name] = member
 
-    def resolve_references(self):
-        super().resolve_references()
-
 
 class Namespace(Scope, Compound):
     declarator = 'namespace'
 
+    def __init__(self, element, index=dict()):
+        super().__init__(element, None, index)
+
     def resolve_references(self):
         super().resolve_references()
-
         for member in self.members.values():
             if isinstance(member, OverloadSet):
                 for func in member:
                     func.is_free = True
 
 
-class Class(Scope, Type, Compound):
+class Class(Scope, Compound, Type):
     declarator = 'class'
 
-    def __init__(self, element, scope, index):
-        super().__init__(element, scope, index)
+    def __init__(self, element, index=dict()):
+        super().__init__(element, None, index)
         self._bases = element.findall('basecompoundref')
 
     def resolve_references(self):
         super().resolve_references()
-
-        self.bases = [
-            Generalization(entry, self) for entry in  self._bases]
+        self.bases = [Generalization(entry, self) for entry in self._bases]
         delattr(self, '_bases')
 
 
@@ -608,10 +779,17 @@ class Generalization():
         self.access = element.get('prot')
         assert self.access
 
-        if element.get('refid'):
-            self.base = derived.entity_reference(element)
+        refid = element.get('refid')
+        if not refid:
+            entity = derived.lookup( ''.join(element.itertext()).strip() )
+            if entity is not None:
+                refid = entity.id
+
+        if refid:
+            self.base = Phrase(
+                [make_entity_reference(element, derived.index, refid)])
         else:
-            self.base = derived.text_with_refs(element)
+            self.base = text_with_refs(element, derived.index)
 
 
 class Struct(Class):
@@ -623,15 +801,16 @@ class Union(Class):
 
 
 class Enum(Scope, Type, Member):
-    def __init__(self, element, section, parent, index):
+    def __init__(self, element, section, parent, index=dict()):
         super().__init__(element, parent, index)
         self.is_scoped = element.get('strong') == 'yes'
-        self.underlying_type = element.find('type')
+        self._underlying_type = element.find('type')
 
         self.objects = []
         for child in element.findall('enumvalue'):
             enumerator = Enumerator(child, section, self, index)
             self.objects.append(enumerator)
+            assert enumerator.name not in enumerator.scope.members
             enumerator.scope.members[enumerator.name] = enumerator
 
     @property
@@ -640,11 +819,13 @@ class Enum(Scope, Type, Member):
 
     def resolve_references(self):
         super().resolve_references()
-        self.underlying_type = self.text_with_refs(self.underlying_type)
+        self.underlying_type = text_with_refs(
+            self._underlying_type, self.index)
+        delattr(self, '_underlying_type')
 
 
 class Value(Member, Templatable):
-    def __init__(self, element, parent, index):
+    def __init__(self, element, parent, index=dict()):
         super().__init__(element, parent, index)
         self.is_static = element.get('static') == 'yes'
         self.is_constexpr = element.get('constexpr') == 'yes'
@@ -657,7 +838,7 @@ class Value(Member, Templatable):
 
 
 class Function(Value):
-    def __init__(self, element, section, parent, index):
+    def __init__(self, element, section, parent, index=dict()):
         super().__init__(element, parent, index)
         self.is_explicit = element.get('explicit') == 'yes'
         self.refqual = element.get('refqual')
@@ -666,8 +847,11 @@ class Function(Value):
         self.is_free = section.get('kind') == 'related'
         self.is_constructor = self.name == parent.name
         self.is_destructor = self.name == '~' + parent.name
-        self.is_noexcept = (
-            element.get('noexcept') == 'yes' or self.is_destructor)
+        noexcept = element.get('noexcept')
+        if noexcept:
+            self.is_noexcept = noexcept == 'yes'
+        else:
+            self.is_noexcept = self.is_destructor
 
         args = element.find('argsstring').text or ''
         self.is_deleted = args.endswith('=delete')
@@ -675,13 +859,13 @@ class Function(Value):
 
         self.overload_set = None
 
-        self.return_type = element.find('type')
-        assert self.return_type is not None
+        self._return_type = element.find('type')
+        assert (
+            self.is_constructor
+            or self.is_destructor
+            or self._return_type is not None)
 
-        self.parameters = [
-            Parameter(param, self)
-            for param in element.findall('param')
-        ]
+        self._parameters = element.findall('param')
 
     @property
     def kind(self):
@@ -711,16 +895,11 @@ class Function(Value):
     def resolve_references(self):
         super().resolve_references()
 
-        self.return_type = self.text_with_refs(self.return_type)
-        for param in self.parameters:
-            param.default_value = self.text_with_refs(param.default_value)
-            param.type = self.text_with_refs(param.type)
+        self.return_type = resolve_type(self._return_type, self.index)
+        delattr(self, '_return_type')
 
-            param.array = self.text_with_refs(param.array)
-            if param.array:
-                assert isinstance(param.type[-1], str)
-                assert param.type[-1].endswith('(&)')
-                param.type[-1] = param.type[-1][:-3]
+        self.parameters = [Parameter(elem, self) for elem in self._parameters]
+        delattr(self, '_parameters')
 
     def __lt__(self, other):
         if not isinstance(other, Function):
@@ -744,13 +923,25 @@ class Function(Value):
 
 class Parameter():
     def __init__(self, element, parent):
-        self.type = element.find('type')
-        self.default_value = element.find('defval')
+        self.type = text_with_refs(element.find('type'), parent.index)
+        self.default_value = text_with_refs(
+            element.find('defval'), parent.index)
+
         self.description = element.find('briefdescription')
-        self.array = element.find('array')
+        if self.description is not None:
+            self.description = make_blocks(self.description, parent)
+        else:
+            self.description = []
+
         self.name = element.find('declname')
         if self.name is not None:
             self.name = self.name.text
+
+        self.array = text_with_refs(element.find('array'), parent.index)
+        if self.array:
+            assert isinstance(self.type[-1], str)
+            assert self.type[-1].endswith('(&)')
+            self.type[-1] = self.type[-1][:-3]
 
 
 class OverloadSet():
@@ -798,7 +989,11 @@ class OverloadSet():
         funcs_backwards = []
         briefs_backwards = []
         for func in self.funcs:
-            brief = ''.join(func.brief.itertext())
+            brief = (
+                ''.join(func._brief.itertext())
+                if func._brief is not None
+                else ''
+            )
             try:
                 n = briefs_backwards.index(brief)
             except:
@@ -810,52 +1005,49 @@ class OverloadSet():
 
 
 class Variable(Value):
-    def __init__(self, element, section, parent, index):
+    def __init__(self, element, section, parent, index=dict()):
         super().__init__(element, parent, index)
-
-        self.value = element.find('initializer')
-        self.type = element.find('type')
+        self._value = element.find('initializer')
+        self._type = element.find('type')
 
     def resolve_references(self):
         super().resolve_references()
-        self.value = self.text_with_refs(self.value)
-        self.type = self.text_with_refs(self.type)
+
+        self.value = text_with_refs(self._value, self.index)
+        delattr(self, '_value')
+
+        self.type = resolve_type(self._type, self.index)
+        delattr(self, '_type')
 
 
 class Enumerator(Variable):
-    def __init__(self, element, section, parent, index):
+    def __init__(self, element, section, parent, index=dict()):
         super().__init__(element, section, parent, index)
         self.is_constexpr = True
         self.is_const = True
         self.is_static = True
-
-        self._enum = parent
+        self.enum = parent
         self.scope = parent if parent.is_scoped else parent.scope
+        assert self.scope
 
     def resolve_references(self):
         super().resolve_references()
-
-        self.type = Phrase([EntityRef(self._enum, [self._enum.name])])
-        delattr(self, '_enum')
+        self.type = Phrase([EntityRef(self.enum, [self.enum.name])])
 
 
 class TypeAlias(Member, Type):
     declarator = 'using'
 
-    def __init__(self, element, section, parent, index):
+    def __init__(self, element, section, parent, index=dict()):
         super().__init__(element, parent, index)
 
-        self.aliased = element.find('type')
-        assert self.aliased is not None
+        self._aliased = element.find('type')
+        assert self._aliased is not None
 
     def resolve_references(self):
         super().resolve_references()
-        self.aliased = self.text_with_refs(self.aliased)
-
-
-class Friend(Member):
-    def __init__(self, element, section, parent, index):
-        super().__init__(element, parent, index)
+        self.aliased = text_with_refs(self._aliased, self.index)
+        delattr(self, '_aliased')
 
 
 class AcceptOneorNone(argparse.Action):
@@ -912,9 +1104,36 @@ def parse_args(args):
             'otherwise PWD'))
     return parser.parse_args(args[1:])
 
-def get_config(file_name):
-    with open(file_name, 'r', encoding='utf-8') as file:
-        return json.load(file)
+def open_input(stdin, args, cwd):
+    data_dir = args.directory
+    if args.input:
+        file = open(args.input, 'r', encoding='utf-8')
+        ctx = file
+        data_dir = data_dir or os.path.dirname(args.input)
+    else:
+        file = stdin
+        ctx = Nullcontext()
+        data_dir = data_dir or cwd
+    return (file, ctx, data_dir)
+
+def open_output(stdout, args):
+    if args.output:
+        file = open(args.output, 'w', encoding='utf-8')
+        ctx = file
+    else:
+        file = stdout
+        ctx = Nullcontext()
+    return (file, ctx)
+
+def load_configs(args):
+    result = {
+        'include_private': False,
+        'legacy_behavior': True,
+    }
+    for file_name in args.config:
+        with open(file_name, 'r', encoding='utf-8') as file:
+            result.update( json.load(file) )
+    return result
 
 def collect_compound_refs(file):
     tree = ET.parse(file)
@@ -953,17 +1172,32 @@ def collect_data(parent_dir, refs):
             }.get(element.get('kind'))
             if not factory:
                 continue
-            factory(element, None, result)
+            factory(element, result)
 
     for entity in result.values():
         assert entity is not None
+        entity.update_scopes()
+
+    for entity in result.values():
         entity.resolve_references();
 
     return result
 
-def construct_environment(includes, config):
+def docca_include_dir(script):
+    return os.path.join(os.path.dirname(script), 'include')
+
+def template_file_name(includes, args):
+    return (args.template
+         or os.path.join(includes, 'docca/quickbook.jinja2'))
+
+def collect_include_dirs(template, include_dir, args):
+    result =  [os.path.dirname(template), include_dir]
+    result.extend(args.include)
+    return result
+
+def construct_environment(loader, config):
     env = jinja2.Environment(
-        loader=jinja2.FileSystemLoader(includes),
+        loader=loader,
         autoescape=False,
         undefined=jinja2.StrictUndefined,
         extensions=[
@@ -991,6 +1225,7 @@ def construct_environment(includes, config):
     env.tests['Enum'] = lambda x: isinstance(x, Enum)
     env.tests['Value'] = lambda x: isinstance(x, Value)
     env.tests['Variable'] = lambda x: isinstance(x, Variable)
+    env.tests['Enumerator'] = lambda x: isinstance(x, Enumerator)
     env.tests['Function'] = lambda x: isinstance(x, Function)
     env.tests['OverloadSet'] = lambda x: isinstance(x, OverloadSet)
     env.tests['Parameter'] = lambda x: isinstance(x, OverloadSet)
@@ -1009,54 +1244,39 @@ def construct_environment(includes, config):
     env.tests['ListItem'] = lambda x: isinstance(x, ListItem)
     env.tests['Section'] = lambda x: isinstance(x, Section)
     env.tests['CodeBlock'] = lambda x: isinstance(x, CodeBlock)
+    env.tests['Table'] = lambda x: isinstance(x, Table)
+    env.tests['Cell'] = lambda x: isinstance(x, Cell)
     env.tests['ParameterList'] = lambda x: isinstance(x, ParameterList)
     env.tests['ParameterDescription'] = lambda x: isinstance(x, ParameterDescription)
     env.tests['ParameterItem'] = lambda x: isinstance(x, ParameterItem)
 
     return env
 
-def main(args, stdin, stdout, includes):
+def render(env, file_name, output, data):
+    template = env.get_template(os.path.basename(file_name))
+    template.stream(entities=data).dump(output)
+
+def main(args, stdin, stdout, script):
     args = parse_args(args)
 
-    data_dir = args.directory
-
-    if args.input:
-        file = open(args.input, 'r', encoding='utf-8')
-        ctx = file
-        data_dir = data_dir or os.path.dirname(args.input)
-    else:
-        file = stdin
-        ctx = contextlib.nullcontext()
-        data_dir = data_dir or os.getcwd()
+    file, ctx, data_dir = open_input(stdin, args, os.getcwd())
     with ctx:
         refs = list(collect_compound_refs(file))
     data = collect_data(data_dir, refs)
 
-    config = {
-        'include_private': False,
-        'legacy_behavior': True,
-    }
-    for file_name in args.config:
-        config.update(get_config(file_name))
+    config = load_configs(args)
 
-    if args.output:
-        file = open(args.output, 'w', encoding='utf-8')
-        ctx = file
-    else:
-        file = stdout
-        ctx = contextlib.nullcontext()
+    file, ctx = open_output(stdout, args)
     with ctx:
-        template_file = (args.template
-             or os.path.join(includes, 'docca/quickbook.jinja2'))
+        include_dir = docca_include_dir(script)
+        template = template_file_name(include_dir, args)
+
+        include_dirs = collect_include_dirs(template, include_dir, args)
 
         env = construct_environment(
-            [os.path.dirname(template_file), includes] + args.include,
-            config)
+            jinja2.FileSystemLoader(include_dirs), config)
 
-        template = env.get_template(os.path.basename(template_file))
-        template.stream(entities=data).dump(file)
+        render(env, template, file, data)
 
 if __name__ == '__main__':
-    includes = os.path.dirname(os.path.realpath(__file__))
-    includes = os.path.join(includes, 'include')
-    main(sys.argv, sys.stdin, sys.stdout, includes)
+    main(sys.argv, sys.stdin, sys.stdout, os.path.realpath(__file__))
