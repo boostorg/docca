@@ -534,7 +534,6 @@ class Entity():
         self.scope = scope
 
         self.name = ''.join( element.find(self.nametag).itertext() )
-        assert self.name
 
         self.groups = []
 
