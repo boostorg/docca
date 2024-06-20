@@ -692,7 +692,9 @@ static
         [@{{ part.url }} {{ phrase(part, in_code=in_code) }}]
     {%- elif part is Linebreak %}{# indent is intentional here #}
 
-{% else -%}
+{% elif part is Phrase -%}
+    {{ phrase(part, in_code=in_code) }}
+    {%- else -%}
         {{ part.unhandled_type() }}
     {%- endif -%}
 {%- endmacro %}
