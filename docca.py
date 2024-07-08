@@ -363,7 +363,7 @@ def make_parameters(element, index):
 
 def make_section(element, index):
     title = None
-    if element and element[0].tag == 'title':
+    if len(element) and element[0].tag == 'title':
         title = phrase_content(element[0], index)
     title = Paragraph(title or [])
 
@@ -671,10 +671,13 @@ class Templatable(Entity):
 
     def resolve_references(self):
         super().resolve_references()
-        self.template_parameters = [
-            Parameter(elem, self)
-            for elem in (self._template_parameters or [])
-        ]
+        params = (
+            self._template_parameters
+            if self._template_parameters is not None
+                and len(self._template_parameters)
+            else []
+        )
+        self.template_parameters = [Parameter(elem, self) for elem in params]
         delattr(self, '_template_parameters')
 
 
