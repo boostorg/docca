@@ -541,13 +541,14 @@ def test_phrase(entities, cfg, render):
         docca.EntityRef(entities['g1'], ['ref text']),
         docca.Linebreak(),
         docca.EntityRef(entities['ostream'], ['output stream']),
+        docca.Phrase([' ', 'more text']),
     ]
     assert render(parts) == textwrap.dedent('''\
         regular text `monospaced text` ['emph [*bold]]
 
         [@http://a.b/c link text][link ns1__ns2__klass.g `ref text`]
 
-        [@http://ostream.org `output stream`]''')
+        [@http://ostream.org `output stream`] more text''')
 
     render.template = '''
         {%- import "docca/quickbook/components.jinja2" as qbk -%}
@@ -557,7 +558,7 @@ def test_phrase(entities, cfg, render):
 
         [@http://a.b/c link text]``[link ns1__ns2__klass.g [^ns1::ns2::klass::g]]``
 
-        ``[@http://ostream.org [^std::ostream]]``''')
+        ``[@http://ostream.org [^std::ostream]]`` more text''')
 
 def test_description(render):
     render.template = '''
