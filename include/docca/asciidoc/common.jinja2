@@ -105,7 +105,7 @@
     {%- if part is string -%}
         {{ text_helper(part, in_code=in_code) }}
     {%- elif part is Monospaced -%}
-        `+++{{ phrase(part, in_code=True) }}+++`
+        [.whitespace-nowrap]`+++{{ phrase(part, in_code=True) }}+++`
     {%- elif part is Emphasised -%}
         _{{ phrase(part, in_code=in_code) }}_
     {%- elif part is Strong -%}
