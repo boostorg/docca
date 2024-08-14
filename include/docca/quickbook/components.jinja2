@@ -705,8 +705,8 @@ static
         overload{{ entity.overload_index + 1 }}
     {%- elif entity.scope and not entity.scope is Namespace -%}
         {{ sanitize_path_segment(entity.name) }}
-        {%- if entity is Function and entity.is_friend -%}_fr{%- endif -%}
-        {%- if entity is Function and entity.is_free -%}_fe{%- endif -%}
+        {%- if (entity is Function or entity is OverloadSet) and entity.is_friend -%}_fr{%- endif -%}
+        {%- if (entity is Function or entity is OverloadSet) and entity.is_free -%}_fe{%- endif -%}
     {%- else -%}
         {%- set sep = joiner("__") -%}
         {%- for segment in entity.path -%}
