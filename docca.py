@@ -1230,7 +1230,7 @@ def construct_environment(loader, config):
     env.tests['Enumerator'] = lambda x: isinstance(x, Enumerator)
     env.tests['Function'] = lambda x: isinstance(x, Function)
     env.tests['OverloadSet'] = lambda x: isinstance(x, OverloadSet)
-    env.tests['Parameter'] = lambda x: isinstance(x, OverloadSet)
+    env.tests['Parameter'] = lambda x: isinstance(x, Parameter)
 
     env.tests['Phrase'] = lambda x: isinstance(x, Phrase)
     env.tests['Linebreak'] = lambda x: isinstance(x, Linebreak)
