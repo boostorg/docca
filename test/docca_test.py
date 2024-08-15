@@ -1001,12 +1001,22 @@ def test_variable():
                                 { 'tag': 'type', 'items': ['std::string'] },
                             ],
                         },
+                        {
+                            'tag': 'memberdef',
+                            'id': 'idv2',
+                            'kind': 'variable',
+                            'items': [
+                                { 'tag': 'name', 'items': ['v2'] },
+                                { 'tag': 'type', 'items': ['std::string(*'] },
+                                { 'tag': 'argsstring', 'items': [')(int)'] },
+                            ],
+                        },
                     ],
                 },
             ]
         }))
     ns.resolve_references()
-    assert len(ns.members) == 1
+    assert len(ns.members) == 2
     for m in ns.members.values():
         m.resolve_references()
     assert isinstance(ns.members['v1'], docca.Variable)
@@ -1020,6 +1030,19 @@ def test_variable():
     assert not ns.members['v1'].is_const
     assert not ns.members['v1'].is_inline
     assert ns.members['v1'].access == 'public'
+
+    assert isinstance(ns.members['v2'], docca.Variable)
+    assert ns.members['v2'].id == 'idv2'
+    assert ns.members['v2'].name == 'v2'
+    assert ns.members['v2'].value.text == ''
+    assert ns.members['v2'].type.text == 'std::string'
+    assert ns.members['v2'].args.text == '(int)'
+    assert not ns.members['v2'].is_static
+    assert not ns.members['v2'].is_constexpr
+    assert not ns.members['v2'].is_volatile
+    assert not ns.members['v2'].is_const
+    assert not ns.members['v2'].is_inline
+    assert ns.members['v2'].access == 'public'
 
     ns = docca.Namespace(
         make_elem({
@@ -1651,6 +1674,13 @@ def test_function():
                         { 'tag': 'array', 'items': ['[1]'] },
                     ],
                 },
+                {
+                    'tag': 'param',
+                    'items': [
+                        { 'tag': 'type', 'items': ['int(*'] },
+                        { 'tag': 'argsstring', 'items': [')(long)'] },
+                    ],
+                },
             ]
         }),
         make_elem({}),
@@ -1658,6 +1688,8 @@ def test_function():
     func.resolve_references()
     assert func.parameters[0].type.text == 'int'
     assert func.parameters[0].array.text == '[1]'
+    assert func.parameters[1].type.text == 'int'
+    assert func.parameters[1].args.text == '(long)'
 
 def test_overload_set():
     index = dict()

@@ -970,6 +970,15 @@ class Parameter():
             assert self.type[-1].endswith('(&)')
             self.type[-1] = self.type[-1][:-3]
 
+        self.args = text_with_refs(element.find('argsstring'), parent.index)
+        if self.args:
+            assert isinstance(self.type[-1], str)
+            assert isinstance(self.args[0], str)
+            assert self.type[-1].endswith('(*')
+            assert self.args[0].startswith(')(')
+            self.type[-1] = self.type[-1][:-2]
+            self.args[0] = self.args[0][1:]
+
 
 class OverloadSet():
     @staticmethod
@@ -1038,6 +1047,7 @@ class Variable(Value):
         super().__init__(element, parent, index)
         self._value = element.find('initializer')
         self._type = element.find('type')
+        self._args = element.find('argsstring')
 
     def resolve_references(self):
         super().resolve_references()
@@ -1047,6 +1057,16 @@ class Variable(Value):
 
         self.type = resolve_type(self._type, self.index)
         delattr(self, '_type')
+
+        self.args = text_with_refs(self._args, self.index)
+        delattr(self, '_args')
+        if self.args:
+            assert isinstance(self.type[-1], str)
+            assert isinstance(self.args[0], str)
+            assert self.type[-1].endswith('(*')
+            assert self.args[0].startswith(')(')
+            self.type[-1] = self.type[-1][:-2]
+            self.args[0] = self.args[0][1:]
 
 
 class Enumerator(Variable):

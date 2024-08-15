@@ -341,8 +341,18 @@ def entities():
         'static': 'yes',
         'constexpr': 'yes',
         'items': [
-            { 'tag': 'name', 'items': ['V'] },
+            { 'tag': 'name', 'items': ['Var2'] },
             { 'tag': 'type', 'items': ['double'] },
+        ]
+    }
+    v3 = {
+        'tag': 'memberdef',
+        'kind': 'variable',
+        'id': 'v3',
+        'items': [
+            { 'tag': 'name', 'items': ['Var3'] },
+            { 'tag': 'type', 'items': ['int(*'] },
+            { 'tag': 'argsstring', 'items': [')(int, long)'] },
         ]
     }
 
@@ -353,7 +363,7 @@ def entities():
             'items': [
                 { 'tag': 'compoundname', 'items': ['ns1'] },
                 { 'tag': 'innernamespace', 'refid': ns2.id },
-                { 'tag': 'sectiondef', 'items': [e1, t1, v1, v2] },
+                { 'tag': 'sectiondef', 'items': [e1, t1, v1, v2, v3] },
                 {
                     'tag': 'briefdescription',
                     'items': [
@@ -1021,7 +1031,8 @@ def test_entity_declaration(entities, render):
     assert render(entities['e1']) == 'enum class e1\n    : unsigned;'
     assert render(entities['t1']) == 'using TA = std::string;'
     assert render(entities['v1']) == 'static\nint Var = 11;'
-    assert render(entities['v2']) == 'static constexpr\ndouble V;'
+    assert render(entities['v2']) == 'static constexpr\ndouble Var2;'
+    assert render(entities['v3']) == 'int(*Var3)(int, long);'
 
 def test_function_declaration(entities, render):
     render.template = '''\
@@ -1092,23 +1103,6 @@ def test_write_entity(cfg, entities, render):
 
         [endsect]
 
-        [section:ns1__V ns1::V]
-        [indexterm1 V]
-
-
-        [heading Synopsis]
-        Defined in header [include_file /path/to/ns1.hpp]
-
-        ```
-        static constexpr
-        double V;
-        ```
-
-
-
-
-
-        [endsect]
         [section:ns1__Var ns1::Var]
         [indexterm1 Var]
 
@@ -1119,6 +1113,39 @@ def test_write_entity(cfg, entities, render):
         ```
         static
         int Var = 11;
+        ```
+
+
+
+
+
+        [endsect]
+        [section:ns1__Var2 ns1::Var2]
+        [indexterm1 Var2]
+
+
+        [heading Synopsis]
+        Defined in header [include_file /path/to/ns1.hpp]
+
+        ```
+        static constexpr
+        double Var2;
+        ```
+
+
+
+
+
+        [endsect]
+        [section:ns1__Var3 ns1::Var3]
+        [indexterm1 Var3]
+
+
+        [heading Synopsis]
+        Defined in header [include_file /path/to/ns1.hpp]
+
+        ```
+        int(*Var3)(int, long);
         ```
 
 
