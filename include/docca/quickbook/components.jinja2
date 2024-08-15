@@ -435,9 +435,14 @@ Convenience header {{ source_header(Config.convenience_header) }}
 {%- if entity.is_constexpr %}{{ sp() }}constexpr{% endif %}
 {%- if sp() %}
 {% endif -%}
-{{ phrase(entity.type, in_code=True) }} {% endif -%}
+{{ phrase(entity.type, in_code=True) }}
+{%- if entity.args %}(*{% else %} {% endif -%}
+{%- endif -%}
 {%- if entity is Type %}{{ entity.declarator }} {% endif -%}
 {{ entity.name }}
+{%- if entity is Variable and entity.args -%}
+){{ phrase(entity.args, in_code=True) }}
+{%- endif -%}
 {%- if entity is Class -%}
 {% for entry in entity.bases %}
     {% if loop.first %}:{% else %},{% endif -%}
