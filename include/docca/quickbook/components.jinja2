@@ -799,11 +799,7 @@ static
 
         {%- set ns = namespace(s=s) -%}
         {%- if in_code -%}
-            {%- set ns.s = ns.s | replace("  ", " ")
-                                | replace("  ", " ")
-                                | replace("  ", " ")
-                                | replace("  ", " ")
-            -%}
+            {%- set ns.s = re.sub("\\s+", " ", ns.s, re.U) -%}
             {%- if ns.s.endswith(" &") -%}
                 {%- set ns.s = ns.s[:-2] + "&" -%}
             {%- elif ns.s.endswith(" *") -%}
@@ -821,7 +817,7 @@ static
             {%- set ns.s = escape(s) -%}
         {%- endif -%}
         {%- for src, tgt in replacements.items() -%}
-            {%- set ns.s = ns.s.replace(src, tgt) -%}
+            {%- set ns.s = re.sub(src, tgt,  ns.s, flags=re.U) -%}
         {%- endfor -%}
         {{ ns.s }}
     {%- else -%}
