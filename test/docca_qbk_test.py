@@ -165,12 +165,30 @@ def entities():
             ]
         }
 
+    cl4 = docca.Class(
+        make_elem({
+            'tag': 'compound',
+            'id': 'cl4',
+            'items': [
+                { 'tag': 'compoundname', 'items': ['nested2'] },
+                {
+                    'tag': 'detaileddescription',
+                    'items': [
+                        'See ',
+                        { 'tag': 'ref', 'refid': 'cl4', 'items': ['nested2'] },
+                        '.',
+                    ],
+                },
+            ]
+        }),
+        index)
     cl2 = docca.Class(
         make_elem({
             'tag': 'compound',
             'id': 'cl2',
             'items': [
                 { 'tag': 'compoundname', 'items': ['nested'] },
+                { 'tag': 'innerclass', 'refid': cl4.id },
                 {
                     'tag': 'templateparamlist',
                     'items': [
@@ -1096,8 +1114,39 @@ def test_write_entity(cfg, entities, render):
             class T = std::String>
         class nested;
         ```
+        [heading Types]
+        [table [[Name][Description]]
+          [
+            [[*[link ns1__ns2__klass.nested.nested2 nested2]]
+            ]
+            [
+            ]
+          ]
+        ]
 
 
+
+
+
+        [section:nested2 ns2::klass::nested::nested2]
+        [indexterm2 nested2..nested]
+
+
+        [heading Synopsis]
+
+
+        ```
+        class nested2;
+        ```
+
+        [heading Description]
+        See [link ns1__ns2__klass.nested.nested2 `nested2`].
+
+
+
+
+
+        [endsect]
 
 
 

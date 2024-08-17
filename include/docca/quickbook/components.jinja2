@@ -719,34 +719,30 @@ static
 {% macro link(entity, prefer_overload=False) -%}
     {%- if entity is Enumerator -%}
         {{ link(entity.enum) }}
-    {%- else -%}
+    {%- elif entity is Namespace -%}
         {%- if 'link_prefix' in Config %}{{ Config.link_prefix }}{% endif -%}
-
-        {%- set ns = namespace(suffix='', path=entity.path) -%}
-        {%- if entity.scope and entity.scope is not Namespace -%}
-            {%- set ns.suffix = '.' + sanitize_path_segment(ns.path[-1].name) -%}
-            {%- set ns.path = ns.path[:-1] -%}
-        {%- endif -%}
-        {%- if (entity is Function or entity is OverloadSet) and entity.is_friend %}
-            {%- set ns.suffix = ns.suffix + '_fr' -%}
-        {%- endif -%}
-        {%- if (entity is Function or entity is OverloadSet)
-                and entity.is_free
-                and entity.scope is Type %}
-            {%- set ns.suffix = ns.suffix + '_fe' -%}
-        {%- endif -%}
-        {%- if entity is Function %}
-            {%- if not prefer_overload and not entity.is_sole_overload %}
-                {%- set ns.suffix = ns.suffix + '.overload{0}'.format(entity.overload_index + 1) -%}
-            {%- endif -%}
-        {%- endif -%}
-
         {%- set sep = joiner('__') -%}
-        {%- for segment in ns.path -%}
+        {%- for segment in entity.path -%}
             {{ sep() }}{{ sanitize_path_segment(segment.name) }}
         {%- endfor -%}
-
-        {{ ns.suffix }}
+    {%- else -%}
+        {%- if entity.scope -%}
+            {{ link(entity.scope, prefer_overload=prefer_overload) }}
+            {%- if entity.scope is Namespace %}__{% else %}.{% endif -%}
+        {%- endif -%}
+        {{ sanitize_path_segment(entity.name) }}
+        {%- if (entity is Function or entity is OverloadSet) -%}
+            {%- if entity.is_friend -%}
+                _fr
+            {%- elif entity.is_free and entity.scope is Type -%}
+                _fe
+            {%- endif -%}
+        {%- endif -%}
+        {%- if entity is Function %}
+            {%- if not prefer_overload and not entity.is_sole_overload -%}
+                .overload{{ entity.overload_index + 1 }}
+            {%- endif -%}
+        {%- endif -%}
     {%- endif -%}
 {%- endmacro %}
 
