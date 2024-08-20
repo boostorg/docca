@@ -13,6 +13,7 @@ import "class" : new ;
 import common ;
 import doxygen ;
 import feature ;
+import modules ;
 import param ;
 import path ;
 import print ;
@@ -25,7 +26,9 @@ import toolset ;
 import type ;
 import virtual-target ;
 
-import python ;
+local saved-project = [ modules.peek project : .current-project ] ;
+toolset.using python ;
+modules.poke project : .current-project : $(saved-project) ;
 
 
 .here  = [ path.make [ modules.binding $(__name__) ] ] ;
@@ -354,7 +357,7 @@ rule generate-reference ( target : sources + : properties * )
 }
 actions generate-reference
 {
-    "$(PYTHON)" "$(RUNNER)" -i"$(>[1])" -o"$(<)" -c"$(>[3-])" -T"$(>[2])" -I"$(INCLUDE)"
+    "$(PYTHON:E=python)" "$(RUNNER)" -i"$(>[1])" -o"$(<)" -c"$(>[3-])" -T"$(>[2])" -I"$(INCLUDE)"
 }
 
 rule make-docca-config ( target : sources * : properties * )
