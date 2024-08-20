@@ -9,5 +9,5 @@ project /boost/docca
     ;
 
 explicit
-    [ alias all : example ]
+    [ alias all : example test ]
     ;
