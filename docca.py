@@ -10,9 +10,10 @@
 #
 
 import argparse
+import importlib
+import io
 import jinja2
 import json
-import io
 import os.path
 import re
 import sys
@@ -1094,6 +1095,11 @@ def parse_args(args):
         action=AcceptOneorNone,
         help='Jinja2 template to use for output')
     parser.add_argument(
+        '-E', '--extension',
+        action='append',
+        default=[],
+        help='Extension module')
+    parser.add_argument(
         '-I', '--include',
         action='append',
         default=[],
@@ -1256,6 +1262,29 @@ def construct_environment(loader, config):
 
     return env
 
+def load_extensions(files):
+    result = []
+    counter = 0
+    for file in files:
+        module = None
+        if not os.path.exists(file):
+            raise RuntimeError('Could not find module %s' % file)
+
+        name = 'docca._ext' + str(counter)
+        spec = importlib.util.spec_from_file_location(name, file)
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[name] = module
+        spec.loader.exec_module(module)
+        result.append(module)
+        counter += 1
+
+    return result
+
+def install_extensions(env, exts):
+    for ext in exts:
+        ext.install_docca_extension(env)
+    return env
+
 def render(env, file_name, output, data):
     template = env.get_template(os.path.basename(file_name))
     template.stream(entities=data).dump(output)
@@ -1279,6 +1308,9 @@ def main(args, stdin, stdout, script):
 
         env = construct_environment(
             jinja2.FileSystemLoader(include_dirs), config)
+
+        exts = load_extensions(args.extension)
+        env = install_extensions(env, exts)
 
         render(env, template, file, data)
 
