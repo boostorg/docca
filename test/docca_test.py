@@ -15,6 +15,7 @@ import jinja2
 import jinja2.ext
 import os
 import pytest
+import re
 
 from docca_test_helpers import (
     MockXmlElem,
@@ -2113,6 +2114,7 @@ def test_construct_environment():
     assert env.globals['Section'] == docca.Section
     assert env.globals['ParameterList'] == docca.ParameterList
     assert env.globals['Config'] == conf
+    assert env.globals['re'] == re
 
 def test_render():
     file = io.StringIO()

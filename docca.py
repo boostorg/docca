@@ -14,6 +14,7 @@ import jinja2
 import json
 import io
 import os.path
+import re
 import sys
 import xml.etree.ElementTree as ET
 
@@ -1214,6 +1215,7 @@ def construct_environment(loader, config):
     env.globals['Section'] = Section
     env.globals['ParameterList'] = ParameterList
     env.globals['Config'] = config
+    env.globals['re'] = re
 
     env.tests['Entity'] = lambda x: isinstance(x, Entity)
     env.tests['Templatable'] = lambda x: isinstance(x, Templatable)
