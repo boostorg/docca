@@ -421,7 +421,7 @@ explicit
 {%- if entity.is_noexcept and not entity.is_destructor %} noexcept{% endif -%}
 {%- if not entity.is_noexcept and entity.is_destructor %} noexcept(false){% endif -%}
 {%- if entity.is_deleted %} = delete
-{%- elif entity.is_defaulted %} = default
+{%- elif entity.is_defaulted and Config.get('show_defaulted') %} = default
 {%- endif -%}
 ;
 {%- endmacro %}

@@ -1401,3 +1401,39 @@ def test_write_entity(cfg, entities, render):
         [endsect]
 
         ''')
+
+def test_defaulted(cfg, render):
+    func = {
+        'tag': 'memberdef',
+        'kind': 'function',
+        'id': 'func',
+        'items': [
+            { 'tag': 'name', 'items': ['func'] },
+            { 'tag': 'argsstring', 'items': ['() =default'] },
+            { 'tag': 'type', 'items': ['void'] },
+        ]
+    }
+    ns = docca.Namespace(
+        make_elem({
+            'tag': 'compound',
+            'id': 'ns',
+            'items': [
+                { 'tag': 'compoundname', 'items': ['ns'] },
+                { 'tag': 'sectiondef', 'items': [func] },
+            ]
+        }))
+    ns.resolve_references()
+    func = ns.index['func']
+    func.resolve_references()
+
+    render.template = '''\
+        {%- import "docca/quickbook/components.jinja2" as qbk -%}
+        {{ qbk.function_declaration(entities) }}'''
+    assert render(func) == textwrap.dedent('''\
+        void
+        func();''')
+
+    render.env.globals['Config']['show_defaulted'] = True
+    assert render(func) == textwrap.dedent('''\
+        void
+        func() = default;''')
