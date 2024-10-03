@@ -380,17 +380,13 @@ Convenience header {{ source_header(Config.convenience_header) }}
 
 {% macro function_declaration(entity, linked=False) -%}
 {{ template_parameters(entity) }}
-{%- if entity.is_explicit -%}
-explicit
-{% endif -%}
-{%- if entity.is_static or entity.is_constexpr -%}
-    {%- set sp = joiner(' ') -%}
-    {%- if entity.is_static %}{{ sp() }}static{% endif -%}
-    {%- if entity.is_constexpr -%}{{ sp() }}constexpr{% endif %}
-{% endif -%}
+{%- set sp = joiner(' ') -%}
+{%- if entity.is_explicit %}{{ sp() }}explicit{% endif -%}
+{%- if entity.is_static %}{{ sp() }}static{% endif -%}
+{%- if entity.is_constexpr %}{{ sp() }}constexpr{% endif %}
 {%- set ret = phrase(entity.return_type, in_code=True) -%}
-{%- if ret -%}
-{{ ret }}
+{%- if ret %}{{ sp() }}{{ ret }}{% endif -%}
+{%- if sp() %}
 {% endif -%}
 {%- if linked -%}
     ``[link {{ link(entity) }} {{ escape(entity.name) }}]``
