@@ -78,10 +78,14 @@ def entities():
         'id': 'f2',
         'static': 'yes',
         'constexpr': 'yes',
+        'noexcept': 'yes',
         'items': [
             { 'tag': 'name', 'items': ['func'] },
-            { 'tag': 'argsstring', 'items': ['()'] },
             { 'tag': 'type', 'items': ['constexpr void'] },
+            {
+                'tag': 'argsstring',
+                 'items': ['() noexcept(noexcept((void)12))'],
+            },
         ]
     }
     g1 = {
@@ -89,6 +93,8 @@ def entities():
         'kind': 'function',
         'id': 'g1',
         'refqual': 'rvalue',
+        'noexcept': 'yes',
+        'noexceptexpression': 'foobar(")", "(")',
         'items': [
             { 'tag': 'name', 'items': ['g'] },
             { 'tag': 'argsstring', 'items': ['()'] },
@@ -1025,11 +1031,11 @@ def test_function_declaration(entities, render):
             int (&n) [1],
             ``[link ns1__ns2__klass [^ns1::ns2::klass]]`` = ``[link ns1__Var [^ns1::Var]]``,
             unsigned t = 2);''')
-    assert render(entities['f2']) == 'static constexpr void\nfunc();'
+    assert render(entities['f2']) == 'static constexpr void\nfunc() noexcept(noexcept((void)12));'
     assert render(entities['cl1_c']) == 'explicit constexpr\nklass();'
     assert render(entities['cl1_d']) == '~klass() noexcept(false);'
     assert render(entities['o=']) == 'void\noperator=() noexcept;'
-    assert render(entities['g1']) == 'void\ng() &&;'
+    assert render(entities['g1']) == 'void\ng() && noexcept(foobar(")", "("));'
     assert render(entities['g2']) == 'void\ng() const&;'
     assert render(entities['g3']) == 'void\ng() & = delete;'
 
@@ -1257,7 +1263,7 @@ def test_write_entity(cfg, entities, render):
         One overload of g
         ```
         void
-        ``[link ns1__ns2__klass.g.overload1 g]``() &&;
+        ``[link ns1__ns2__klass.g.overload1 g]``() && noexcept(foobar(")", "("));
           ``[''\''&raquo;\''' [link ns1__ns2__klass.g.overload1 `more...`]]``
         ```
         Another overload of g
@@ -1283,7 +1289,7 @@ def test_write_entity(cfg, entities, render):
 
         ```
         void
-        g() &&;
+        g() && noexcept(foobar(")", "("));
         ```
 
 
@@ -1397,7 +1403,7 @@ def test_write_entity(cfg, entities, render):
 
         ```
         static constexpr void
-        func();
+        func() noexcept(noexcept((void)12));
         ```
 
 

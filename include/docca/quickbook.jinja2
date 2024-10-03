@@ -257,6 +257,7 @@ class Function(Value):
     overload_set -> OverloadSet
     return_type -> Phrase
     parameters -> [Parameter]
+    noexcept_condition -> str|None
 
     overload_index -> int # -1 if is_sole_overload, otherwise the overload's
                           # index in the overload set

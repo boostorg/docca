@@ -414,7 +414,11 @@ Convenience header {{ source_header(Config.convenience_header) }}
     {%- elif "rvalue" == entity.refqual %}&&
     {%- endif -%}
 {%- endif -%}
-{%- if entity.is_noexcept and not entity.is_destructor %} noexcept{% endif -%}
+{%- if entity.is_noexcept and not entity.is_destructor %} noexcept
+{%- if entity.noexcept_condition -%}
+    ({{ entity.noexcept_condition }})
+{%- endif -%}
+{%- endif -%}
 {%- if not entity.is_noexcept and entity.is_destructor %} noexcept(false){% endif -%}
 {%- if entity.is_deleted %} = delete
 {%- elif entity.is_defaulted and Config.get('show_defaulted') %} = default

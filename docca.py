@@ -512,6 +512,23 @@ _chartable = {
 def remove_endlines(s):
     return s.translate(_chartable)
 
+_noexcept_pattern = re.compile(r'(?<=\bnoexcept\()')
+def parse_noexcept_condition(argstring):
+    match = _noexcept_pattern.search(argstring)
+    if match:
+        parens = 1
+        start = match.start(0)
+        end = -1
+        for i in range(start, len(argstring)):
+            if not parens:
+                end = i
+                break
+            if argstring[i] == '(':
+                parens += 1
+            elif argstring[i]== ')':
+                parens -= 1
+        assert parens == 0
+        return argstring[start:end]
 
 class Location():
     def __init__(self, elem):
@@ -870,6 +887,12 @@ class Function(Value):
             or self._return_type is not None)
 
         self._parameters = element.findall('param')
+
+        self.noexcept_condition = None
+        if self.is_noexcept:
+            self.noexcept_condition = element.get('noexceptexpression')
+            if not self.noexcept_condition:
+                self.noexcept_condition = parse_noexcept_condition(args)
 
     @property
     def kind(self):
