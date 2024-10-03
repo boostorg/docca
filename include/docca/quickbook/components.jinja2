@@ -467,7 +467,7 @@ Convenience header {{ source_header(Config.convenience_header) }}
     {%- if tparam.array %} (&{% endif -%}
     {%- if tparam.name -%}
         {%- if not tparam.array %} {% endif -%}
-        {{ tparam.name }}
+        {{ phrase_part(tparam.name, in_code=True) }}
     {%- endif -%}
     {%- if tparam.array %}) {{ phrase(tparam.array, in_code=True) }}{% endif -%}
     {%- if tparam.default_value %} = {{ phrase(tparam.default_value, in_code=True) }}{% endif -%}
@@ -794,7 +794,7 @@ Convenience header {{ source_header(Config.convenience_header) }}
 
 {% macro text_helper(s, in_code=False) -%}
     {%- if s -%}
-        {%- set replacements=Config.get('replace_strings', {}) -%}
+        {%- set replacements=Config.get('replace_strings', {}) if in_code else {} -%}
 
         {%- set ns = namespace(s=s) -%}
         {%- if in_code -%}

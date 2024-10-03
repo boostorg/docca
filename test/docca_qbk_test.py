@@ -456,16 +456,19 @@ def test_text_helper(cfg, render):
         {{ qbk.text_helper(entities) }}'''
     assert render('[[foobar]]') == '\\[\\[foobar\\]\\]'
 
+    render.template = '''
+        {%- import "docca/quickbook/components.jinja2" as qbk -%}
+        {{ qbk.text_helper(entities, in_code=True) }}'''
     cfg['replace_strings'] = {'foobar': 'FooBar'}
-    assert render('[[foobar]]') == '\\[\\[FooBar\\]\\]'
+    assert render('[[foobar]]') == '[[FooBar]]'
 
     cfg['replace_strings'] = {'foob\\b': 'FooBar'}
-    assert render('[[foobar]]') == '\\[\\[foobar\\]\\]'
+    assert render('[[foobar]]') == '[[foobar]]'
 
     cfg['replace_strings'] = {'\\bf(o+)bar\\b': 'F\\1BaR'}
-    assert render('[[fobar]]') == '\\[\\[FoBaR\\]\\]'
-    assert render('[[foobar]]') == '\\[\\[FooBaR\\]\\]'
-    assert render('[[fooobar]]') == '\\[\\[FoooBaR\\]\\]'
+    assert render('[[fobar]]') == '[[FoBaR]]'
+    assert render('[[foobar]]') == '[[FooBaR]]'
+    assert render('[[fooobar]]') == '[[FoooBaR]]'
 
     render.template = '''
         {%- import "docca/quickbook/components.jinja2" as qbk -%}
