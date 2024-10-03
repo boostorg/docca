@@ -590,8 +590,7 @@ def test_description(render):
     render.template = '''
         {%- import "docca/quickbook/components.jinja2" as qbk -%}
         {{ qbk.description(entities, nesting='  ') }}'''
-    parts = []
-    assert render(parts) == ''
+    assert render([]) == ''
 
     parts = [
         docca.Paragraph([ '1 ', docca.Monospaced(['2']) ]),
@@ -696,6 +695,70 @@ def test_description(render):
             ]
           ]
         ]
+        [heading Parameters]
+        [table [[Name][Description]]
+          [
+            [`int a`, `char const* b`
+            ]
+            [
+        param1 description
+
+
+            ]
+          ]
+          [
+            [`float c`
+            ]
+            [
+        param2 description
+
+
+            ]
+          ]
+        ]
+
+        ''')
+
+    render.template = '''\
+        {%- import "docca/quickbook/components.jinja2" as qbk -%}
+        {{ qbk.description(entities, nesting='  ', title='Title') }}'''
+    assert render([]) == ''
+
+    parts = [ docca.Paragraph([ '1 ', docca.Monospaced(['2']) ]) ]
+    assert render(parts) == textwrap.dedent('''\
+        [heading Title]
+        1 `2`
+
+        ''')
+    parts = [
+        docca.ParameterList(
+            'param',
+            [
+                docca.ParameterDescription(
+                    [docca.Paragraph(['param1 description'])],
+                    [
+                        docca.ParameterItem(
+                            docca.Phrase(['int']),
+                            docca.Phrase(['a']),
+                            None),
+                        docca.ParameterItem(
+                            docca.Phrase(['char const*']),
+                            docca.Phrase(['b']),
+                            None),
+                    ],
+                ),
+                docca.ParameterDescription(
+                    [docca.Paragraph(['param2 description'])],
+                    [
+                        docca.ParameterItem(
+                            docca.Phrase(['float']),
+                            docca.Phrase(['c']),
+                            None),
+                    ]
+                ),
+            ])
+    ]
+    assert render(parts) == textwrap.dedent('''\
         [heading Parameters]
         [table [[Name][Description]]
           [

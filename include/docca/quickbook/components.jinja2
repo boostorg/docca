@@ -363,10 +363,7 @@ Official repository: https://github.com/boostorg/json
 ```
 {{ caller("summary") }}
 {% if entity.description -%}
-{% if entity.description[0] is not Section -%}
-    {{ heading('Description') }}
-{%- endif %}
-{{ description(entity.description) }}
+{{ description(entity.description, title='Description') }}
 {%- endif %}
 
 {% if Config.get('convenience_header')
@@ -628,9 +625,13 @@ static
 {%- endmacro %}
 
 
-{% macro description(parts, nesting='') -%}
-
+{% macro description(parts, nesting='', title=None) -%}
 {%- for part in parts -%}
+{%- if loop.first and title
+    and part is not Section and part is not ParameterList
+    -%}
+    {{ heading(title) }}
+{% endif -%}
 
 {%- if part is Paragraph -%}
 {{ phrase(part) }}
