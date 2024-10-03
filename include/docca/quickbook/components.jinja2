@@ -426,8 +426,10 @@ Convenience header {{ source_header(Config.convenience_header) }}
 {% macro entity_declaration(entity) -%}
 {{ template_parameters(entity) }}
 {%- if entity is Variable -%}
-{%- if entity.is_static -%}
-static
+{%- set sp = joiner(' ') -%}
+{%- if entity.is_static %}{{ sp() }}static{% endif -%}
+{%- if entity.is_constexpr %}{{ sp() }}constexpr{% endif %}
+{%- if sp() %}
 {% endif -%}
 {{ phrase(entity.type, in_code=True) }} {% endif -%}
 {%- if entity is Type %}{{ entity.declarator }} {% endif -%}

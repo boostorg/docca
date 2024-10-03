@@ -328,6 +328,17 @@ def entities():
             { 'tag': 'initializer', 'items': ['= 11'] }
         ]
     }
+    v2 = {
+        'tag': 'memberdef',
+        'kind': 'variable',
+        'id': 'v2',
+        'static': 'yes',
+        'constexpr': 'yes',
+        'items': [
+            { 'tag': 'name', 'items': ['V'] },
+            { 'tag': 'type', 'items': ['double'] },
+        ]
+    }
 
     ns1 = docca.Namespace(
         make_elem({
@@ -336,7 +347,7 @@ def entities():
             'items': [
                 { 'tag': 'compoundname', 'items': ['ns1'] },
                 { 'tag': 'innernamespace', 'refid': ns2.id },
-                { 'tag': 'sectiondef', 'items': [e1, t1, v1] },
+                { 'tag': 'sectiondef', 'items': [e1, t1, v1, v2] },
                 {
                     'tag': 'briefdescription',
                     'items': [
@@ -1001,6 +1012,7 @@ def test_entity_declaration(entities, render):
     assert render(entities['e1']) == 'enum class e1\n    : unsigned;'
     assert render(entities['t1']) == 'using TA = std::string;'
     assert render(entities['v1']) == 'static\nint Var = 11;'
+    assert render(entities['v2']) == 'static constexpr\ndouble V;'
 
 def test_function_declaration(entities, render):
     render.template = '''\
@@ -1071,6 +1083,23 @@ def test_write_entity(cfg, entities, render):
 
         [endsect]
 
+        [section:ns1__V ns1::V]
+        [indexterm1 V]
+
+
+        [heading Synopsis]
+        Defined in header [include_file /path/to/ns1.hpp]
+
+        ```
+        static constexpr
+        double V;
+        ```
+
+
+
+
+
+        [endsect]
         [section:ns1__Var ns1::Var]
         [indexterm1 Var]
 
