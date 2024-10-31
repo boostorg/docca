@@ -1835,6 +1835,84 @@ def test_overload_set():
     assert oset[0].overload_set == oset
     assert oset[0].is_sole_overload
 
+    index = dict()
+    ns = docca.Namespace(
+        make_elem({
+            'tag': 'compound',
+            'id': 'ns',
+            'items': [
+                { 'tag': 'compoundname', 'items': ['ns'] },
+                {
+                    'tag': 'sectiondef',
+                    'items': [
+                        {
+                            'tag': 'memberdef',
+                            'kind': 'function',
+                            'id': 'f1',
+                            'items': [
+                                { 'tag': 'name', 'items': ['func1'] },
+                                { 'tag': 'argsstring', 'items': [''] },
+                                { 'tag': 'type', 'items': ['void'] },
+                                {
+                                    'tag': 'briefdescription',
+                                    'items': ['brief1'],
+                                },
+                            ],
+                        },
+                        {
+                            'tag': 'memberdef',
+                            'kind': 'function',
+                            'id': 'f2',
+                            'items': [
+                                { 'tag': 'name', 'items': ['func1'] },
+                                { 'tag': 'argsstring', 'items': [''] },
+                                { 'tag': 'type', 'items': ['int'] },
+                                {
+                                    'tag': 'briefdescription',
+                                    'items': ['brief2'],
+                                },
+                            ],
+                        },
+                        {
+                            'tag': 'memberdef',
+                            'kind': 'function',
+                            'id': 'f3',
+                            'items': [
+                                { 'tag': 'name', 'items': ['func1'] },
+                                { 'tag': 'argsstring', 'items': [''] },
+                                { 'tag': 'type', 'items': ['int'] },
+                                {
+                                    'tag': 'briefdescription',
+                                    'items': ['brief1'],
+                                },
+                            ],
+                        },
+                    ],
+                }
+            ]
+        }),
+        index)
+    for entity in index.values():
+        entity.resolve_references()
+    oset = list(ns.members.values())[0]
+    assert len(oset) == 3
+    assert collect_paragraphs(oset[0].brief) == 'brief1'
+    assert oset[0].return_type.text == 'void'
+
+    assert collect_paragraphs(oset[1].brief) == 'brief1'
+    assert oset[1].return_type.text == 'int'
+
+    assert collect_paragraphs(oset[2].brief) == 'brief2'
+
+    funcs = sorted(list(oset))
+    assert collect_paragraphs(funcs[0].brief) == 'brief1'
+    assert funcs[0].return_type.text == 'void'
+
+    assert collect_paragraphs(funcs[1].brief) == 'brief1'
+    assert funcs[1].return_type.text == 'int'
+
+    assert collect_paragraphs(funcs[2].brief) == 'brief2'
+
 def test_parse_args():
     args = docca.parse_args([''])
     assert args.input is None
