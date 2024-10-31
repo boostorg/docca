@@ -315,7 +315,7 @@ are enabled.
     {% if entity is not Namespace -%}
         {% continue %}
     {%- endif -%}
-    {% if Config.default_namespace
+    {% if Config.get('default_namespace')
         and entity.fully_qualified_name != Config.default_namespace -%}
         {% continue %}
     {%- endif -%}
