@@ -933,7 +933,7 @@ class Function(Value):
             return self.name < other.name
 
         if self.name == other.name:
-            if self.scope == parent.scope:
+            if self.scope == other.scope:
                 return self.overload_index < other.overload_index
             return self.scope < other.scope
 
