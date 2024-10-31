@@ -1773,7 +1773,8 @@ def test_overload_set():
                     ],
                 }
             ]
-        }))
+        }),
+        index)
     for entity in index.values():
         entity.resolve_references()
     assert len(ns.members) == 2
@@ -1821,7 +1822,8 @@ def test_overload_set():
                     ],
                 }
             ]
-        }))
+        }),
+        index)
     for entity in index.values():
         entity.resolve_references()
     oset = list(ns.members.values())[0]

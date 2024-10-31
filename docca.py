@@ -974,7 +974,9 @@ class Parameter():
 class OverloadSet():
     @staticmethod
     def create(element, section, parent, index):
-        func = Function(element, section, parent, index)
+        func = index.get( element.get('id') )
+        if not func:
+            func = Function(element, section, parent, index)
 
         key = (func.name, func.access, func.kind)
         if key in parent.members:
