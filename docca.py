@@ -1060,11 +1060,10 @@ class Variable(Value):
 
         self.args = text_with_refs(self._args, self.index)
         delattr(self, '_args')
-        if self.args:
-            assert isinstance(self.type[-1], str)
-            assert isinstance(self.args[0], str)
-            assert self.type[-1].endswith('(*')
-            assert self.args[0].startswith(')(')
+        if (self.args
+            and self.type[-1].endswith('(*')
+            and self.args[0].startswith(')(')
+        ):
             self.type[-1] = self.type[-1][:-2]
             self.args[0] = self.args[0][1:]
 
