@@ -767,6 +767,25 @@ class Scope(Entity):
                     self.members[member.name] = member
 
 
+    def resolve_references(self):
+        super().resolve_references()
+        bad_keys = []
+        for key, member in self.members.items():
+            if isinstance(member, OverloadSet):
+                good_funcs = [
+                    func for func in member
+                    if self.index.get(func.id) is func
+                ]
+                if good_funcs:
+                    member.funcs = good_funcs
+                else:
+                    bad_keys.append(key)
+            elif self.index[member.id] is not member:
+                bad_keys.append(key)
+
+        for key in bad_keys:
+            del self.members[key]
+
 class Namespace(Scope, Compound):
     declarator = 'namespace'
 
@@ -983,9 +1002,13 @@ class Parameter():
 class OverloadSet():
     @staticmethod
     def create(element, section, parent, index):
-        func = index.get( element.get('id') )
-        if not func:
-            func = Function(element, section, parent, index)
+        if (index.get( element.get('id') )
+            and section.get('kind') == 'related'
+            and parent is Class
+        ):
+            return None
+
+        func = Function(element, section, parent, index)
 
         key = (func.name, func.access, func.kind)
         if key in parent.members:

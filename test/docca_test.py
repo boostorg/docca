@@ -1691,6 +1691,62 @@ def test_function():
     assert func.parameters[1].type.text == 'int'
     assert func.parameters[1].args.text == '(long)'
 
+    index = {}
+    ns = docca.Namespace(
+        make_elem({
+            'tag': 'compound',
+            'id': 'ns',
+            'items': [
+                { 'tag': 'compoundname', 'items': ['Namespace'] },
+                {
+                    'tag': 'sectiondef',
+                    'items': [
+                        {
+                            'tag': 'memberdef',
+                            'id': 'f1',
+                            'kind': 'function',
+                            'items': [
+                                { 'tag': 'name', 'items': ['func1'] },
+                                { 'tag': 'argsstring', 'items': ['()'] },
+                                { 'tag': 'type', 'items': ['void'] },
+                            ],
+                        },
+                    ],
+                },
+            ],
+        }),
+        index);
+    c = docca.Class(
+        make_elem({
+            'tag': 'compound',
+            'id': 'cl',
+            'items': [
+                { 'tag': 'compoundname', 'items': ['Class'] },
+                {
+                    'tag': 'sectiondef',
+                    'kind': 'related',
+                    'items': [
+                        {
+                            'tag': 'memberdef',
+                            'id': 'f1',
+                            'kind': 'function',
+                            'items': [
+                                { 'tag': 'name', 'items': ['func1'] },
+                                { 'tag': 'argsstring', 'items': ['()'] },
+                                { 'tag': 'type', 'items': ['void'] },
+                            ],
+                        },
+                    ],
+                },
+            ],
+        }),
+        index);
+    for e in index.values():
+        e.resolve_references()
+    assert len(c.members) == 1
+    assert len(ns.members) == 0
+    assert list(c.members.values())[0].scope == c
+
 def test_overload_set():
     index = dict()
     ns = docca.Namespace(
