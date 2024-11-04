@@ -759,6 +759,8 @@ class Scope(Entity):
                     'enum': Enum,
                 }[kind]
                 member = factory(member_def, section, self, index)
+                if member is None:
+                    continue
                 if type(member) is OverloadSet:
                     key = (member.name, member.access, member.kind)
                     self.members[key] = member
@@ -1003,8 +1005,8 @@ class OverloadSet():
     @staticmethod
     def create(element, section, parent, index):
         if (index.get( element.get('id') )
-            and section.get('kind') == 'related'
-            and parent is Class
+            and (section.get('kind') != 'related'
+                 or not isinstance(parent, Class))
         ):
             return None
 
