@@ -517,6 +517,14 @@ def test_phrases():
     assert isinstance(p[0], docca.Phrase)
     assert p[0].text == ''
 
+    p = docca.make_phrase(make_elem({'tag': 'mdash'}), None)
+    assert isinstance(p, docca.EmDash)
+    assert p.text == '\u2014'
+
+    p = docca.make_phrase(make_elem({'tag': 'ndash'}), None)
+    assert isinstance(p, docca.EnDash)
+    assert p.text == '\u2013'
+
 def test_namespace():
     ns = docca.Namespace(
         make_elem({

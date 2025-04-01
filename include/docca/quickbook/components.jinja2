@@ -673,6 +673,10 @@ Convenience header {{ source_header(Config.convenience_header) }}
 {% macro phrase_part(part, in_code=False) -%}
     {%- if part is string -%}
         {{ text_helper(part, in_code=in_code) }}
+    {%- elif part is EmDash -%}
+        {{ part.text }}
+    {%- elif part is EnDash -%}
+        {{ part.text }}
     {%- elif part is Monospaced -%}
         `{{ phrase(part, in_code=True) }}`
     {%- elif part is Emphasised -%}

@@ -84,6 +84,14 @@ class EntityRef(Phrase): # text with associated entity
 class UrlLink(Phrase): # a direct full or relative link, similar to HTML <a>
     url -> str
 
+class EmDash(Phrase): # an em-dash
+    text -> str # the Unicode character for em-dashes
+    def __len__(self) -> int # always 0
+
+class EnDash(Phrase): # an en-dash
+    text -> str # the Unicode character for en-dashes
+    def __len__(self) -> int # always 0
+
 class Block(): # A single block or hierarchy of blocks
     pass
 

@@ -108,6 +108,27 @@ class UrlLink(Phrase):
             result = self.url
         return result
 
+class EmDash:
+    def __init__(self, *args, **kw):
+        pass
+
+    @property
+    def text(self):
+        return '\u2014'
+
+    def __len__(self):
+        return 0
+
+class EnDash:
+    def __init__(self, *args, **kw):
+        pass
+
+    @property
+    def text(self):
+        return '\u2013'
+
+    def __len__(self):
+        return 0
 
 class Block:
     pass
@@ -453,6 +474,8 @@ def make_phrase(element, index, allow_missing_refs=False):
         'ulink': make_url_link,
         'linebreak': make_linebreak,
         'ref': make_entity_reference,
+        'mdash': EmDash,
+        'ndash': EnDash,
     }[element.tag]
     return func(element, index, allow_missing_refs=allow_missing_refs)
 
@@ -1316,6 +1339,8 @@ def construct_environment(loader, config):
     env.tests['Monospaced'] = lambda x: isinstance(x, Monospaced)
     env.tests['EntityRef'] = lambda x: isinstance(x, EntityRef)
     env.tests['UrlLink'] = lambda x: isinstance(x, UrlLink)
+    env.tests['EmDash'] = lambda x: isinstance(x, EmDash)
+    env.tests['EnDash'] = lambda x: isinstance(x, EnDash)
 
     env.tests['Block'] = lambda x: isinstance(x, Block)
     env.tests['Paragraph'] = lambda x: isinstance(x, Paragraph)
