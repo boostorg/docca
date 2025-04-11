@@ -782,12 +782,14 @@ class Scope(Entity):
                     'enum': Enum,
                 }[kind]
                 member = factory(member_def, section, self, index)
-                if member is None:
-                    continue
                 if type(member) is OverloadSet:
                     key = (member.name, member.access, member.kind)
                     self.members[key] = member
                 else:
+                    if member and member.name in self.members:
+                        member = work_around_repeated_member(self, member)
+                    if member is None:
+                        continue
                     assert member.name not in self.members
                     self.members[member.name] = member
 
@@ -1144,6 +1146,28 @@ class TypeAlias(Member, Type):
         super().resolve_references()
         self.aliased = text_with_refs(self._aliased, self.index)
         delattr(self, '_aliased')
+
+
+def work_around_repeated_member(scope, member):
+    scope_loc = scope.location
+    member_loc = member.location
+    old_member = scope.members[member.name]
+    old_member_loc = old_member.location
+    if (scope.is_specialization and
+            scope_loc and
+            member_loc and
+            old_member_loc and
+            member_loc.file == scope_loc.file and
+            member_loc.line >= scope_loc.line and
+            (old_member_loc.file != scope_loc.file or
+                old_member_loc.line < scope_loc.line)):
+        # the new member's declaration is in the same file as the
+        # specialization's declaration and follows it; the old member's
+        # declarattion is either in a different file or preceeds the
+        # specialization's declaration
+        del scope.members[member.name]
+        return member
+    return None
 
 
 class AcceptOneorNone(argparse.Action):

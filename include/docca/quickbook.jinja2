@@ -135,10 +135,10 @@ class Section(Block): # A sequence of blocks with an optional title
     def __getitem__(self, pos) -> Block
 
 class ParameterList(Block):
-    parameters = 'param'
-    return_values = 'retval'
-    exceptions = 'exception'
-    template_parameters = 'templateparam'
+    Parameters = 'param'
+    ReturnValues = 'retval'
+    Exceptions = 'exception'
+    TemplateParameters = 'templateparam'
 
     self.kind -> str # 'param', 'templateparam', etc
 
