@@ -1258,6 +1258,13 @@ def load_configs(args):
     for file_name in args.config:
         with open(file_name, 'r', encoding='utf-8') as file:
             result.update( json.load(file) )
+    if 'allowed_prefixes' not in result:
+        allowed_prefixes = ['']
+        default_ns = result.get('default_namespace')
+        if default_ns:
+            allowed_prefixes[0] = default_ns + '::'
+        result['allowed_prefixes'] = allowed_prefixes
+
     return result
 
 def collect_compound_refs(file):

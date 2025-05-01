@@ -19,7 +19,7 @@ from docca_test_helpers import make_elem
 
 @pytest.fixture
 def cfg():
-    return dict(legacy_behavior=False)
+    return dict(legacy_behavior=False, allowed_prefixes=[''])
 
 @pytest.fixture
 def entities():
