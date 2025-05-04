@@ -588,6 +588,10 @@ class Entity():
         self.index = index
         index[self.id] = self
 
+    def __repr__(self) -> str:
+        return f'{type(self).__name__}({self.fully_qualified_name})'
+
+
     @property
     def location(self):
         return (
@@ -966,6 +970,20 @@ class Function(Value):
         return -1
 
     def resolve_references(self):
+        assert self._description is not None
+        node = self._description.find('.//xrefsect/..')
+        if node is not None:
+            subnode = node.find('xrefsect')
+            assert subnode is not None
+            xreftitle = subnode.find('xreftitle')
+            assert xreftitle is not None
+            assert xreftitle.text == 'overload_specific'
+            xrefdescription = subnode.find('xrefdescription')
+            assert xrefdescription is not None
+            self.overload_specific = make_blocks(xrefdescription, self.index)
+            node.remove(subnode)
+        else:
+            self.overload_specific = []
         super().resolve_references()
 
         self.return_type = resolve_type(self._return_type, self.index)
@@ -1050,6 +1068,9 @@ class OverloadSet():
         self.funcs = funcs
         assert len(funcs)
         self._resort()
+    
+    def __repr__(self) -> str:
+        return f'OverloadSet({self.fully_qualified_name})'
 
     def append(self, func):
         self.funcs.append(func)
